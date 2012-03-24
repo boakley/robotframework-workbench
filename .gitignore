@@ -1,0 +1,21 @@
+# temporary and local directories
+tmp
+build
+dist
+
+# python cruft
+*.pyc
+*$py.class
+
+# archivy things
+*.gz
+*.zip
+*.tar
+
+# OS cruft
+.DS_Store*
+Thumbs.db
+
+# emacs crud
+*~
+\#*#

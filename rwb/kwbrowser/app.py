@@ -60,14 +60,12 @@ class KwBrowserApp(tk.Tk):
         self.kwt.reset()
 
         self.kwt.add_library("BuiltIn")
-#        libs = (("BuiltIn", []))
-#        for (name, args) in libs:
-#            self.kwt.add_library(name, *args)
-
         for path in self.working_set:
             if os.path.isdir(path):
                 for filename in os.listdir(path):
-                    if filename.endswith(".xml"):
+                    if (filename.endswith(".xml") or 
+                        filename.endswith(".txt") or
+                        filename.endswith(".tsv")):
                         self.kwt.add_file(os.path.join(path, filename))
             else:
                 self.kwt.add_file(path)

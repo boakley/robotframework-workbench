@@ -145,12 +145,10 @@ class RunnerApp(tk.Tk):
 
     def _on_start(self):
         from tsubprocess import Process
-        kbot = "t:/tools/kbot.exe"
         listener = "rwb/runner/socket_listener.py:%s" % self._port
         args = ["--listener", listener, "--log", "NONE", "--report", "NONE"]
         files = sys.argv[1:]
-#        files = ["sleeper.txt"]
-        cmd = [kbot] + args + files
+        cmd = ["pybot"] + args + files
         print "cmd:", cmd
         self.robot_log.add("start_process", cmd)
         self.process = Process(cmd)

@@ -7,6 +7,8 @@ class FontScheme(object):
         self.default = self.clone_font(variable_base, "default")
         self.bold = self.clone_font(variable_base, "bold", weight="bold")
         self.italic = self.clone_font(variable_base, "italic", slant="italic")
+        self.heading = self.clone_font(variable_base, "header", weight="bold",
+                                       size = int(self.default.actual()["size"])+4)
         self.fixed = self.clone_font(fixed_base, "fixed")
         self.fixed_bold = self.clone_font(fixed_base, "fixed_bold", weight="bold")
         self.fixed_italic = self.clone_font(fixed_base, "fixed_italic", slant="italic")

@@ -449,7 +449,7 @@ class EditorPage(tk.Frame):
             self.dte.tag_remove(tag, block_start, block_end)
         
         # now add all the special highlighting
-        self.dte.highlight_pattern(r'^\*+\s*(Test Cases?|(User\s+)?Keywords?|Settings?|Variables?)', 
+        self.dte.highlight_pattern(r'^\*+\s*(Test Cases?|(User\s+)?Keywords?|Settings?|Variables?)\s*\**', 
                                    "heading", block_start, block_end, whole_lines = True)
         self.dte.highlight_pattern(r'\$\{.*?\}', "variable", block_start, block_end)
         self.dte.highlight_pattern(r'^\s*\*+[^\*]+\*+\s*$', "bold", block_start, block_end)

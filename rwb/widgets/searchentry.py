@@ -5,12 +5,10 @@
 import Tkinter as tk
 import ttk
 
-class SearchEntry(ttk.Entry):
+class SearchBox(ttk.Entry):
     image1 = None
     image2 = None
     def __init__(self, parent, *args, **kwargs):
-        # This code is a translation of the code from http://wiki.tcl.tk/18188
-        
         ttk.Entry.__init__(self, parent, *args, **kwargs)
         # what an awful hack. This really should be part of
         # the style. For now, this is good enough. 
@@ -23,22 +21,22 @@ class SearchEntry(ttk.Entry):
         # showing up. Why? I have no idea. So, we'll go old school
         # get this image to show up using the layout, so we'll go
         # and place a label there. *sigh*. 
-        l = tk.Label(self, image=self.cancel_image, background="white", 
-                     borderwidth=0, highlightthickness=0,
-                     cursor = "left_ptr")
-        l.place(relx=1.0, rely=.5, anchor="e", x=-8)
-        self._stringvar = tk.StringVar()
-        validatecommand = (self.register(self._on_validate), "%P")
-        self.configure(validate="key", validatecommand=validatecommand,
-                       textvariable=self._stringvar)
-
-        l.bind("<1>", self._on_cancel)
-        self.bind("<Return>", self._on_next)
-        self.bind("<Control-n>", self._on_next)
-        self.bind("<Control-p>", self._on_previous)
-        self.bind("<Control-g>", self._on_next)
+        self.cancel_label = tk.Label(self, image=self.cancel_image, background="white", 
+                                     borderwidth=0, highlightthickness=0,
+                                     cursor = "left_ptr")
+        self.cancel_label.place(relx=1.0, rely=.5, anchor="e", x=-8)
+        self.cancel_label.bind("<1>", self._on_cancel)
         self.bind("<Escape>", self._on_cancel)
-        self.bind("<F3>", self._on_next)
+
+    def _on_cancel(self, event):
+        self.delete(0, "end")
+#        self._stringvar.set("")
+        self.cancel()
+        return "break"
+
+    def cancel(self):
+        # do nothing; subclasses can override, obviously
+        pass
 
     def _initialize_style(self):
         self.normal_image = tk.PhotoImage(data=image_data, format="gif -index 0")
@@ -61,6 +59,21 @@ class SearchEntry(ttk.Entry):
                             ]})
                 ])
         self.configure(style="Search.entry", width=40)
+        
+class SearchEntry(SearchBox):
+    def __init__(self, parent, *args, **kwargs):
+        
+        SearchBox.__init__(self, parent, *args, **kwargs)
+        validatecommand = (self.register(self._on_validate), "%P")
+        self._stringvar = tk.StringVar()
+        self.configure(validate="key", validatecommand=validatecommand,
+                       textvariable=self._stringvar)
+
+        self.bind("<Return>", self._on_next)
+        self.bind("<Control-n>", self._on_next)
+        self.bind("<Control-p>", self._on_previous)
+        self.bind("<Control-g>", self._on_next)
+        self.bind("<F3>", self._on_next)
 
     def _on_previous(self, event):
         self.previous()
@@ -68,11 +81,6 @@ class SearchEntry(ttk.Entry):
 
     def _on_next(self, event):
         self.next()
-        return "break"
-
-    def _on_cancel(self, event):
-        self._stringvar.set("")
-        self.cancel()
         return "break"
 
     def cancel(self):

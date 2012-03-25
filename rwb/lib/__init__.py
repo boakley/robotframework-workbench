@@ -1,6 +1,8 @@
 import colors
 import fonts
-import keywordtable
 import configobj
+from keywordtable import KeywordTable
+from colors import ColorScheme
+from fonts import FontScheme
 
 

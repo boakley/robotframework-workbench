@@ -1,13 +1,14 @@
 '''keywordtable - an SQLite database of keywords
 
 Keywords can be loaded from resource files, test suite files,
-and libdoc-formatted xml
+and libdoc-formatted xml, or from python libraries
 '''
 
 import sqlite3
 import os
 import xml.etree.ElementTree as ET
 from robot.parsing.model import ResourceFile, TestCaseFile
+from robot.running import TestLibrary
 from robot.errors import DataError
 import time
 
@@ -62,6 +63,10 @@ class KeywordTable(object):
             result = [row[0] for row in cursor.fetchall()]
             return list(set(result))
             
+    def reset(self):
+        self.execute("DELETE FROM collection_table")
+        self.execute("DELETE FROM keyword_table")
+
     def add_directory(self, dirname):
         '''Adds all the .xml files in the given directory'''
         for filename in os.listdir(dirname):
@@ -83,38 +88,53 @@ class KeywordTable(object):
         if ext.lower() in (".txt", ".tsv", ".html"):
             try:
                 self.add_resource_file(filename)
-            except DataError:
+            except DataError, e:
                 # not a resource file. Maybe it's a test file
                 try:
                     self.add_testsuite_file(filename)
-                except DataError:
+                except DataError, e:
                     raise DataError("%s: not a resource or test sutie file" % filename)
+
         elif ext.lower() in (".xml"):
             self.add_libdoc_file(filename)
             
         else:
             raise DataError("%s: unsupported file type" % filename)
 
+    def add_library(self, name, *args):
+        print "add library:", name, args
+        lib = TestLibrary(name, args)
+        namedargs = "yes" if len(lib.named_args) > 0 else "no"
+
+        if len(lib.handlers) > 0:
+            collection_id = self.add_collection(lib.name, "library",
+                                                lib.doc, lib.version,
+                                                lib.scope, namedargs)
+            for handler in lib.handlers.values():
+                self._add_keyword(collection_id, handler.name, handler.doc, handler.arguments.names)
+
     def add_testsuite_file(self, filename):
         '''Add all keywords in a test suite file'''
         suite = TestCaseFile(self, source=filename)
         suite.populate()
-        collection_id = self.add_collection(suite.name, "testsuite",suite.setting_table.doc.value) 
+        if len(suite.keywords) > 0:
+            collection_id = self.add_collection(suite.name, "testsuite",suite.setting_table.doc.value) 
 
-        for kw in suite.keywords:
-            args = [arg.strip("${}") for arg in kw.args.value]
-            self._add_keyword(collection_id, kw.name, kw.doc.value, args)
+            for kw in suite.keywords:
+                args = [arg.strip("${}") for arg in kw.args.value]
+                self._add_keyword(collection_id, kw.name, kw.doc.value, args)
         
     def add_resource_file(self, filename):
         '''add all keywords in a resource file'''
         resource = ResourceFile(source=filename)
         resource.populate()
 
-        collection_id = self.add_collection(resource.name, "resource", 
-                                             resource.setting_table.doc.value)
-        for kw in resource.keywords:
-            args = [arg.strip("${}") for arg in kw.args.value]
-            self._add_keyword(collection_id, kw.name, kw.doc.value, args)
+        if len(resource.keywords) > 0:
+            collection_id = self.add_collection(resource.name, "resource", 
+                                                resource.setting_table.doc.value)
+            for kw in resource.keywords:
+                args = [arg.strip("${}") for arg in kw.args.value]
+                self._add_keyword(collection_id, kw.name, kw.doc.value, args)
 
     def add_libdoc_file(self, filename):
         '''add all keywords from a libdoc-generated xml file'''

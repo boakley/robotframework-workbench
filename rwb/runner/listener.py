@@ -1,6 +1,6 @@
 '''listener.py
 
-This implements the classes used as the endpoing of a SocketListener
+This implements the classes used as the endpoint of a SocketListener
 (see socket_listener.py). 
 
 RemoteRobotListener is the class that should be instantiated to listen

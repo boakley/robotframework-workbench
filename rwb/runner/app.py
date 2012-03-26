@@ -2,11 +2,13 @@ import Tkinter as tk
 import ttk
 import tkFont
 import sys
+import os
 from robot_console import RobotConsole
 from robot_log import RobotLog
 from listener import RemoteRobotListener
 from robot_tally import RobotTally
 from rwb.lib import AbstractRwbApp
+from tsubprocess import Process
 import shlex
 
 class RunnerApp(AbstractRwbApp):
@@ -26,6 +28,7 @@ class RunnerApp(AbstractRwbApp):
 
         self._poll_job_id = None
         self.process = None
+        self.after(1, self.start_test)
 
     def _create_menubar(self):
         self.menubar = tk.Menu(self)
@@ -38,10 +41,14 @@ class RunnerApp(AbstractRwbApp):
         self.toolbar.pack(side="top", fill="x", padx=8)
         s = ttk.Style()
         s.configure('BigButton.TButton', font="big_font")
-        self.start = ttk.Button(self.toolbar, text="Start", command=self._on_start, 
-                                style="BigButton.TButton", takefocus=False)
-        self.stop =  ttk.Button(self.toolbar, text="Stop", command=self._on_stop, 
-                                style="BigButton.TButton", takefocus=False)
+        self.start_button = ttk.Button(self.toolbar, text="Start", 
+                                       command=self.start_test, 
+                                       style="BigButton.TButton", 
+                                       takefocus=False)
+        self.stop_button =  ttk.Button(self.toolbar, text="Stop", 
+                                       command=self.stop_test, 
+                                       style="BigButton.TButton", 
+                                       takefocus=False)
         # this is all so very gross. Surely I can do better! (and don't call my Shirley!)
         label = {
             "critical": ttk.Label(self.toolbar, text="critical", foreground="darkgray"),
@@ -85,9 +92,10 @@ class RunnerApp(AbstractRwbApp):
         label["fail"].grid(row=2, column=5, sticky="nse")
         label["total"].grid(row=2, column=6, sticky="nse")
 
-        self.start.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=4, pady=4)
-        self.stop.grid(row=0, column=1, rowspan=2, sticky="nsew", padx=4, pady=4)
+        self.start_button.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=4, pady=4)
+        self.stop_button.grid(row=0, column=1, rowspan=2, sticky="nsew", padx=4, pady=4)
 
+        self.stop_button.configure(state="disabled")
         self.toolbar.grid_columnconfigure(2, weight=2)
         self.value = value
 
@@ -99,6 +107,14 @@ class RunnerApp(AbstractRwbApp):
             (stdout, stderr) = self.process.read()
             self.robot_console.append(stderr, "stderr")
             self.robot_console.append(stdout, "stdout")
+
+            # see if it's still alive
+            if self.process.exit_code() is not None:
+                # It's dead, Jim.
+                self.process = None
+                self.stop_button.configure(state="disabled")
+                self.start_button.configure(state="normal")
+
         self._poll_job_id = self.after(delay, self.poll, delay)
 
     def _create_notebook(self):
@@ -145,9 +161,12 @@ class RunnerApp(AbstractRwbApp):
             if self.tally.get("critical","fail") > 0:
                 self.value["critical","fail"].configure(foreground="red")
 
-    def _on_start(self):
-        from tsubprocess import Process
-        listener = "rwb/runner/socket_listener.py:%s" % self._port
+    def start_test(self):
+        self.stop_button.configure(state="normal")
+        self.start_button.configure(state="disabled")
+        here = os.path.dirname(__file__)
+        listener = os.path.join(here, "socket_listener.py:%s" % self._port)
+#        listener = "rwb/runner/socket_listener.py:%s" % self._port
         args = ["--listener", listener, "--log", "NONE", "--report", "NONE"]
         files = sys.argv[1:]
         # if user used option --runner 'blah', use that; otherwise,
@@ -163,9 +182,12 @@ class RunnerApp(AbstractRwbApp):
             self._poll_job_id = None
         self.poll(100)
 
-    def _on_stop(self):
+    def stop_test(self):
         if self.process:
             self.process.terminate()
+
+        self.stop_button.configure(state="disabled")
+        self.start_button.configure(state="normal")
 
     def _on_exit(self):
         self.destroy()

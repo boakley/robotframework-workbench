@@ -1,15 +1,17 @@
 import Tkinter as tk
 import ttk
 import tkFont
+import sys
 from robot_console import RobotConsole
 from robot_log import RobotLog
 from listener import RemoteRobotListener
 from robot_tally import RobotTally
-import sys
+from rwb.lib import AbstractRwbApp
+import shlex
 
-class RunnerApp(tk.Tk):
+class RunnerApp(AbstractRwbApp):
     def __init__(self, *args, **kwargs):
-        tk.Tk.__init__(self, *args, **kwargs)
+        AbstractRwbApp.__init__(self, "rwb.runner")
         self.wm_geometry("600x600") # <shrug>
         self.tally = RobotTally()
         self._create_fonts()
@@ -33,7 +35,7 @@ class RunnerApp(tk.Tk):
     
     def _create_toolbar(self):
         self.toolbar = ttk.Frame(self)
-        self.toolbar.pack(side="top", fill="x")
+        self.toolbar.pack(side="top", fill="x", padx=8)
         s = ttk.Style()
         s.configure('BigButton.TButton', font="big_font")
         self.start = ttk.Button(self.toolbar, text="Start", command=self._on_start, 
@@ -43,10 +45,10 @@ class RunnerApp(tk.Tk):
         # this is all so very gross. Surely I can do better! (and don't call my Shirley!)
         label = {
             "critical": ttk.Label(self.toolbar, text="critical", foreground="darkgray"),
-            "all": ttk.Label(self.toolbar, text="all", foreground="darkgray"),
-            "pass": ttk.Label(self.toolbar, text="pass", foreground="darkgray"),
-            "fail": ttk.Label(self.toolbar, text="fail", foreground="darkgray"),
-            "total": ttk.Label(self.toolbar, text="total", foreground="darkgray"),
+            "all":      ttk.Label(self.toolbar, text="all", foreground="darkgray"),
+            "pass":     ttk.Label(self.toolbar, text="pass", foreground="darkgray"),
+            "fail":     ttk.Label(self.toolbar, text="fail", foreground="darkgray"),
+            "total":    ttk.Label(self.toolbar, text="total", foreground="darkgray"),
             }
         value = {
             ("critical","pass"): ttk.Label(self.toolbar, text="38", width=5, 
@@ -148,8 +150,12 @@ class RunnerApp(tk.Tk):
         listener = "rwb/runner/socket_listener.py:%s" % self._port
         args = ["--listener", listener, "--log", "NONE", "--report", "NONE"]
         files = sys.argv[1:]
-        cmd = ["pybot"] + args + files
-        print "cmd:", cmd
+        # if user used option --runner 'blah', use that; otherwise,
+        # use "python -m robot.runner". 
+        cmdstring = "python -m robot.runner"
+        cmd = shlex.split(cmdstring) + args + files
+        self.log.debug("command:" + " ".join(cmd))
+#        print "cmd:", cmd
         self.robot_log.add("start_process", cmd)
         self.process = Process(cmd)
         if self._poll_job_id is not None:

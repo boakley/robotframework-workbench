@@ -66,7 +66,7 @@ class EditorApp(tk.Tk, EditorAPI):
         self._initialize_preferences()
         self._initialize_keyword_database()
         self.loaded_files = {}
-        self.wm_geometry("1200x800")
+        self.wm_geometry("800x600")
         self._create_menubar()
         self._create_toolbar()
         self._create_statusbar()

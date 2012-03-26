@@ -102,7 +102,6 @@ class KeywordTable(object):
             raise DataError("%s: unsupported file type" % filename)
 
     def add_library(self, name, *args):
-        print "add library:", name, args
         lib = TestLibrary(name, args)
         namedargs = "yes" if len(lib.named_args) > 0 else "no"
 

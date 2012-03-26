@@ -14,7 +14,6 @@ class KwBrowser(ttk.Frame):
         self.fonts = FontScheme()
         self.kwdb = KeywordTable()
 
-        self.configure(width=400, height=600)
         self._create_ui()
         self.reset()
         self.bind("<Visibility>", self._on_visibility)
@@ -54,14 +53,17 @@ class KwBrowser(ttk.Frame):
             
         # UGH. This is klunky. I should refactor this.
         pattern = "%" + string + "%"
-        parameters = [pattern,]
+        parameters = []
         SQL = ["SELECT kw.name, kw.id, kw.doc, c.name",
                "FROM keyword_table as kw",
                "JOIN collection_table as c",
-               "WHERE kw.name LIKE ?"
                ]
-        if type == "both":
-            SQL.append("OR kw.doc like ?")
+        if type == "name":
+            SQL.append("WHERE kw.name LIKE ?")
+            parameters.append(pattern)
+        else:
+            SQL.append("WHERE (kw.name like ? OR kw.doc like ?)")
+            parameters.append(pattern)
             parameters.append(pattern)
 
         if library_id != ALL_ID:

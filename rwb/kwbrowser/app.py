@@ -1,4 +1,7 @@
 '''
+RWB Keyword Browser
+
+A tool for browsing robotframework keywords
 '''
 
 import os
@@ -16,10 +19,10 @@ class KwBrowserApp(AbstractRwbApp):
     '''A Tkinter application that wraps the browser frame'''
     def __init__(self, *args, **kwargs):
         AbstractRwbApp.__init__(self, "rwb.kwbrowser")
-#        tk.Tk.__init__(self, *args, **kwargs)
+        self.wm_geometry("800x600")
         self.working_set = sys.argv[1:]
 
-        self.wm_title("RWB Keyword Browser")
+        self.wm_title("Keyword Browser - Robot Framework Workbench")
         self.kwt = KwBrowser(self, borderwidth=1, relief="solid")
         menubar = Menubar(self)
         self.statusbar = Statusbar(self)
@@ -43,6 +46,8 @@ class KwBrowserApp(AbstractRwbApp):
         self.kwt.reset()
 
         # try to load all libraries installed with robot
+        # I'm not a big fan of this solution but I like the
+        # end result, so I deem it Good Enough for now.
         libdir = os.path.dirname(robot.libraries.__file__)
 
         loaded = []
@@ -50,9 +55,8 @@ class KwBrowserApp(AbstractRwbApp):
             if filename.endswith(".py") or filename.endswith(".pyc"):
                 libname, ext = os.path.splitext(filename)
                 if (libname.lower() not in loaded and 
-                    not libname.lower().startswith("deprecated") and
-                    libname.lower() != "remote" and
-                    libname.lower() != "easter"):
+                    not self._should_ignore(libname)):
+
                     # N.B. remote library has no default constructor
                     # so to speak; importing it will fail because it
                     # requires an argument.
@@ -70,9 +74,28 @@ class KwBrowserApp(AbstractRwbApp):
                     if (filename.endswith(".xml") or 
                         filename.endswith(".txt") or
                         filename.endswith(".tsv")):
-                        self.kwt.add_file(os.path.join(path, filename))
+                        try:
+                            fullname = os.path.join(path, filename)
+                            self.kwt.add_file(fullname)
+                        except Exception, e:
+                            message = "unable to load '%s'" % fullname
+                            message += ": " + str(e)
+                            self.log.warning(message)
             else:
-                self.kwt.add_file(path)
+                try:
+                    self.kwt.add_file(path)
+                except Exception, e:
+                    message = "unable to load '%s'" % path
+                    message += ": " + str(e)
+                    self.log.warning(message)
+
+    def _should_ignore(self, name):
+        '''Return True if a given library name should be ignored'''
+        _name = name.lower()
+        return (_name.startswith("deprecated") or
+                _name.startswith("_") or
+                _name == "remote" or
+                _name == "easter")
 
     def load_resource(self, filename=None):
         '''Load a resource file'''
@@ -87,7 +110,6 @@ class KwBrowserApp(AbstractRwbApp):
                 self.kwt.add_file(filename)
                 self.working_set.append(filename)
             except Exception, e:
-                print "drat!", e
                 tkMessageBox.showinfo(
                     "Load file...",
                     "The file does not appear to be a resource file, test suite or libdoc output file",

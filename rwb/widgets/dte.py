@@ -42,6 +42,8 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         font = self.cget("font")
         self.log = logging.getLogger("dte")
 
+        self.tmpvar = tk.IntVar(master=self, name="::__countx__")
+
         # add a special bind tag before the class binding so we can
         # preempt the default bindings when the completion window is
         # visible (eg: up and down arrows will affect the selection in
@@ -67,7 +69,7 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         self.bind("<Triple-1>", self._on_triple_click) 
         self.bind("<Control-Return>", self._on_control_enter)
         self.bind("<Control-\\>", self._on_expand)
-        self.bind("<<Copy>>", self._on_copy)
+        self.bind("<<Paste>>", self._on_paste)
         
         # other ideas:
         # double-1: if inside a variable, select only the word not the
@@ -170,8 +172,8 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         '''
         lines = []
         for row in rows:
-            data = "|" + " | ".join(row)
-            lines.append(data)
+            data = "| " + " | ".join(row)
+            lines.append(data.rstrip())
         return "\n".join(lines)
 
     def replace_selected_rows(self, rows):
@@ -268,10 +270,9 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         if self.complete_frame.winfo_viewable():
             self.complete_frame.place_forget()
 
-        countvar = tk.IntVar(master=self, name="::__count__")
-        i = self.search("(^| )\|( |$)", "insert", regexp=True, count=countvar)
+        i = self.search("(^| )\|( |$)", "insert", regexp=True, count=self.tmpvar)
         if (i != ""):
-            self.mark_set("insert", "%s+%sc" % (i, countvar.get()))
+            self.mark_set("insert", "%s+%sc" % (i, self.tmpvar.get()))
             # special case for empty cells
             if (self.get("insert") == "|"):
                 self.mark_set("insert", "insert-1c")
@@ -292,9 +293,21 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         self.edit_separator()
         self.configure(autoseparators=True)
     
-    def _on_copy(self, event):
-        import sys; sys.stdout.flush()
-        
+    def _on_paste(self, event):
+        '''I was having problems on my mac where the clipboard had 
+        strings terminated by \r. This converts those to newlines
+        before doing the paste
+        '''
+        data = self.clipboard_get().replace("\r\n", "\n").replace("\r", "\n")
+        self.edit_separator()
+        try:
+            self.delete("sel.first", "sel.last")
+        except:
+            pass
+        self.insert("insert", data)
+        self.edit_separator()
+        return "break"
+
     def _on_expand(self, event):
         sys.stdout.flush()
         
@@ -354,12 +367,11 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
 
         # are we in a variable? If so, move to just outside the variable
         line = self.get("insert linestart", "insert")
-        countvar = tk.IntVar(master=self, name="::__countx__")
         if re.search(r'\${[^}]*$', line):
             index = self.search("} *", "insert", regexp=True,
-                                stopindex="insert lineend", count=countvar)
+                                stopindex="insert lineend", count=self.tmpvar)
             if index != "":
-                self.mark_set("insert", "%s+%sc" % (index, countvar.get()))
+                self.mark_set("insert", "%s+%sc" % (index, self.tmpvar.get()))
                 return "break"
 
         # are we at the beginning of a blank line? If so, add indentation
@@ -382,16 +394,15 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         return "break"
 
     def _current_cell_boundaries(self):
-        countvar = tk.IntVar(master=self, name="::__countx__")
 
         # find the separator prior to this cell
         i = self.search("(^| )\|( |$)", "insert", regexp=True, 
-                        count=countvar, backwards=True,
+                        count=self.tmpvar, backwards=True,
                         stopindex="insert linestart")
         if i == "":
             start = self.index("insert linestart")
         else:
-            start = self.index("%s+%sc" % (i, countvar.get()))
+            start = self.index("%s+%sc" % (i, self.tmpvar.get()))
         i = self.search(" \|( |$)", "insert", stopindex="insert lineend", regexp=True)
         if i == "": i = self.index("insert lineend")
         return (start, i)

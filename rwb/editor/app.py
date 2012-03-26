@@ -3,13 +3,13 @@ import ttk
 import tkMessageBox
 import tkFileDialog
 import tkFont
-import codecs
 import sys
 import logging
 import os
 import imp
 import urllib2
 import platform
+import subprocess
 from rwb.widgets import Statusbar
 from rwb.widgets import SearchEntry
 from rwb.widgets import ToolButton
@@ -535,6 +535,10 @@ class EditorApp(tk.Tk, EditorAPI):
         #                       command=lambda tool=stubber: self._invoke_tool(tool))
         # self.menubar.add_cascade(label="Tools", menu=toolsMenu)
 
+        run_menu = tk.Menu(self.menubar, tearoff=False)
+        run_menu.add_command(label="Run current test suite", command=self._on_run_current)
+        self.menubar.add_cascade(label="Run", menu=run_menu)
+
         help_menu = tk.Menu(self.menubar, tearoff=False)
         help_menu.add_command(label="View Help", command=self._on_view_help)
         help_menu.add_command(label="View Shortcuts", command=self._on_view_shortcuts)
@@ -549,6 +553,20 @@ class EditorApp(tk.Tk, EditorAPI):
         self.table_menu = table_menu
         self.tools_menu = tools_menu
         self.help_menu = help_menu
+        self.run_menu = run_menu
+
+    def _on_run_current(self, event=None):
+        page = self.notebook.get_current_page()
+        if page.path is None:
+            message = "You must first save this to a file before running"
+            tkMessageBox.showwarning(parent=self, 
+                                     title="Sorry about this...",
+                                     message=message)
+        else:
+            self.save(page)
+            cmd = "python -m rwb.runner '%s'" % page.path
+            os.system(cmd + "&")
+        return "break"
 
     def _on_select_similar_rows(self):
         current_editor = self.get_current_editor()

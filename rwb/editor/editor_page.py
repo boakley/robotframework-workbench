@@ -251,9 +251,15 @@ class EditorPage(tk.Frame):
         # For saving we'll strip off all trailing whitespace and
         # ensure the text ends with a newline.
         text = self.dte.get(1.0, "end-1c").rstrip() + "\n"
+        if self.encoding == "ascii" and not self._is_ascii(text):
+            self.app.status_message("unicode detected; switching to utf-8")
+            self.encoding="utf-8-sig"
         encoded_text = text.encode(self.encoding)
         with open(self.path, "w") as f:
             f.write(encoded_text)
+
+    def _is_ascii(self, s):
+        return all(ord(c) < 128 for c in s)
 
     def get_text_widget(self):
         '''Return the text widget associated with this page'''

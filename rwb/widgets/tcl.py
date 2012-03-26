@@ -20,9 +20,12 @@ proc widget_proxy {actual_widget post_change_hook args} {
 	    set index1 [$actual_widget index [lindex $args 1]]
 	    $actual_widget mark set start_change $index1
 	    $actual_widget mark set end_change $index1
-	    $actual_widget mark gravity start_change left
-	    $actual_widget mark gravity end_change right
+	} else {
+	    $actual_widget mark set start_change insert
+	    $actual_widget mark set end_change insert
 	}
+	$actual_widget mark gravity start_change left
+	$actual_widget mark gravity end_change right
 
 	if {$command == "insert"} {
 	    set index1 [$actual_widget index [lindex $args 1]]
@@ -52,7 +55,7 @@ proc widget_proxy {actual_widget post_change_hook args} {
 	    # the flag makes sure that whatever happens in the
 	    # callback doesn't cause the callbacks to be called again.
 	    set $flag 1
-	    catch {$post_change_hook $result {*}$args }
+	    catch {$post_change_hook $result {*}$args } result
 	    unset -nocomplain $flag
 	}
     }

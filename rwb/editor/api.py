@@ -21,6 +21,9 @@ class EditorAPI(object):
             section = section.get(key, {})
         return section.get(keys[-1], default)
 
+    def status_message(self, string):
+        self.statusbar.message(string)
+        
     def set_setting(self, key, value):
         '''Set a setting for the given key
 

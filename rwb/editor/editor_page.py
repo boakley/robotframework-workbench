@@ -63,13 +63,13 @@ class EditorPage(tk.Frame):
 
         tk.Frame.__init__(self, parent)
         self._create_widgets()
-        self.configure(background=self.app.colors.background2)
+#        self.configure(background=self.app.colors.background2)
 
         # keep track of window height; when it changes, don't
         # immediately update the line numbers
         self._last_winfo_height = self.winfo_height()
 
-        if path is not None:
+        if path is not None and os.path.exists(path):
             self.load(path)
 
     def _on_linenumber_control_click(self, event):
@@ -137,12 +137,10 @@ class EditorPage(tk.Frame):
                                   font=("Helvetica", 16, "normal"), 
                                   insertbackground="#ff0000",
                                   insertwidth=1,
-                                  background=self.app.colors.background2,
                                   highlightthickness=0,
                                   textvariable = self._name_var)
         self.close_button = tk.Button(self.nameframe, text="close [x]", 
                                       borderwidth=1, relief="raised",
-                                      background=self.app.colors.background2,
                                       highlightthickness=0,
                                       foreground="white",
                                       command=lambda: self.dte.event_generate("<<Close>>"))
@@ -150,8 +148,7 @@ class EditorPage(tk.Frame):
 #        self.nameentry.pack(fill="both", expand="True")
         self.namepath = tk.Label(self.nameframe, 
                                  text="<unsaved>",
-                                 anchor="sw", borderwidth=0, foreground="gray",
-                                 background=self.app.colors.background2)
+                                 anchor="sw", borderwidth=0, foreground="gray")
 #                                 background=core.colors.background3)
         if self.path is not None:
             self.namepath.configure(text=self.path)
@@ -181,7 +178,7 @@ class EditorPage(tk.Frame):
                                       tabs = tabwidth*em,
                                       font=self.app.fonts.fixed)
 
-        self.linenumbers = DteMargin(self, background=self.app.colors.background2, 
+        self.linenumbers = DteMargin(self, background="#f2f2f2",
                                      borderwidth=0,
 #        self.linenumbers = DteMargin(self, borderwidth=0,
                                      highlightthickness=0, width=4*em)
@@ -193,7 +190,7 @@ class EditorPage(tk.Frame):
         hsb = AutoScrollbar(self,
                             command=self.dte.xview, 
                             orient="horizontal")
-        filler = tk.Frame(self, background=self.app.colors.background2, 
+        filler = tk.Frame(self, 
                           borderwidth=0, highlightthickness=0)
 #        filler = tk.Frame(self, borderwidth=0, highlightthickness=0)
         self.dte.configure(xscrollcommand=hsb.set, yscrollcommand=self.OnYviewChanged)
@@ -474,5 +471,6 @@ class EditorPage(tk.Frame):
         self.dte.tag_configure("cell", background="pink")
         start_line = int(float(block_start))
         end_line = int(float(block_end))
+        self.linenumbers.update_linenumbers()
 
         self.event_generate("<<FileChanged>>", data="this is bogus")

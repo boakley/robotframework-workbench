@@ -49,6 +49,9 @@ class RobotConsole(tk.Frame):
                 self.text.delete(foo, "%s+%sc" % (foo, count.get()))
                 self.text.insert(foo, text, tag) 
         
+    def reset(self):
+        self.text.delete(1.0, "end")
+
     def append(self, text, *tags):
         self.text.mark_set("last", "end-1c")
         self.text.mark_gravity("last", "left")

@@ -5,6 +5,7 @@ import sys
 import os
 from robot_console import RobotConsole
 from robot_log import RobotLog
+from robot_messages import RobotMessages
 from listener import RemoteRobotListener
 from robot_tally import RobotTally
 from rwb.lib import AbstractRwbApp
@@ -14,12 +15,19 @@ import shlex
 class RunnerApp(AbstractRwbApp):
     def __init__(self, *args, **kwargs):
         AbstractRwbApp.__init__(self, "rwb.runner")
-        self.wm_geometry("600x600") # <shrug>
+        self.wm_geometry("800x600")
         self.tally = RobotTally()
         self._create_fonts()
         self._create_menubar()
         self._create_toolbar()
         self._create_notebook()
+        
+        # every event gets an id, a simple incrementing integer. The plan
+        # is that each display (console, log, etc) will be able to jump
+        # to the related item in some other display using this id (ie:
+        # from the message window you can jump to the details window or
+        # visa versa) (this isn't implemented yet...)
+        self._id = 0
 
         self._listener = RemoteRobotListener(self, self._listen)
         self._port = self._listener.port
@@ -121,8 +129,10 @@ class RunnerApp(AbstractRwbApp):
         self.notebook = ttk.Notebook(self)
         self.robot_console = RobotConsole(self.notebook)
         self.robot_log = RobotLog(self.notebook)
-        self.notebook.add(self.robot_log, text="Log")
+        self.robot_messages = RobotMessages(self.notebook)
+        self.notebook.add(self.robot_log, text="Details")
         self.notebook.add(self.robot_console, text="Console")
+        self.notebook.add(self.robot_messages, text="Messages")
         self.notebook.pack(side="top", fill="both", expand=True)
 
     def _create_fonts(self):
@@ -153,6 +163,8 @@ class RunnerApp(AbstractRwbApp):
 
     def _listen(self, name, *args):
         self.robot_log.add(name, *args)
+        if name == "log_message":
+            self.robot_messages.add(*args)
                        
         # bleh. I hate how I implemented this. 
         if name == "end_test":
@@ -162,6 +174,9 @@ class RunnerApp(AbstractRwbApp):
                 self.value["critical","fail"].configure(foreground="red")
 
     def start_test(self):
+        self.robot_log.reset()
+        self.robot_console.reset()
+        self.robot_messages.reset()
         self.stop_button.configure(state="normal")
         self.start_button.configure(state="disabled")
         here = os.path.dirname(__file__)

@@ -79,6 +79,11 @@ class RobotLog(tk.Frame):
         print "pid:", args
         pass
 
+    def reset(self):
+        self._nodes = [""]
+        for item in self.tree.get_children(""):
+            self.tree.delete(item)
+
     def add(self, method, *args):
         map = {"start_suite":   self._start_suite,
                "end_suite":     self._end_suite,

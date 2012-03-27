@@ -259,7 +259,11 @@ class EditorPage(tk.Frame):
             f.write(encoded_text)
 
     def _is_ascii(self, s):
-        return all(ord(c) < 128 for c in s)
+        try:
+            s.decode('ascii')
+            return True
+        except UnicodeEncodeError:
+            return False
 
     def get_text_widget(self):
         '''Return the text widget associated with this page'''

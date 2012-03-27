@@ -28,7 +28,20 @@ class RobotTally(object):
     def get(self, *keys):
         return self.var[keys].get()
 
+    def __str__(self):
+        (cpass, cfail, ctotal, apass, afail, atotal) = self.summary()
+        critical = "%s critical tests, %s passed, %s failed." % (ctotal, cpass, cfail)
+        total = "%s tests total, %s passed, %s failed." % (atotal, apass, afail)
+        return critical + " " + total
+
     def summary(self):
+        '''Return a summary of the test result
+
+        This returns a list of 6 values in the following order:
+        critical pass, critical fail, critical total, 
+        all pass, all fail, all total
+        '''
+        
         return (self.var["critical","pass"].get(),
                 self.var["critical","fail"].get(),
                 self.var["critical","total"].get(),

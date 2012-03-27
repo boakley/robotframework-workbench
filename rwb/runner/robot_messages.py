@@ -71,7 +71,7 @@ class RobotMessages(ttk.Frame):
             self._add_tree_item(data)
 
     def _add_tree_item(self, data):
-        level, timestamp, message = data
+        level, timestamp, message, event_id = data
         tags = (level,)
         strings = message.split("\n")
         if self._show_level[level].get():
@@ -86,13 +86,10 @@ class RobotMessages(ttk.Frame):
                                         tags=tags)
             self.tree.see(node)
 
-    def add(self, attrs):
+    def add(self, event_id, attrs):
         '''Add an item to the log'''
         time = attrs["timestamp"].split(" ")[1]
-        data = (attrs["level"], time, attrs["message"])
+        data = (attrs["level"], time, attrs["message"], event_id)
         self._cache.append(data)
         self._add_tree_item(data)
-            
-
-
 

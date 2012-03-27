@@ -1,3 +1,28 @@
+'''
+Robot Framework Workbench Test Runner
+
+Copyright (c) 2012 Bryan Oakley
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+TODO: 
+  * add progress bar
+  * add menubar
+  * fully implement notion of IDs
+  * print currently executing test suite in status bar
+
+'''
+
 import Tkinter as tk
 import ttk
 import tkFont
@@ -19,6 +44,7 @@ class RunnerApp(AbstractRwbApp):
         self.tally = RobotTally()
         self._create_fonts()
         self._create_menubar()
+        self._create_statusbar()
         self._create_toolbar()
         self._create_notebook()
         
@@ -31,12 +57,23 @@ class RunnerApp(AbstractRwbApp):
 
         self._listener = RemoteRobotListener(self, self._listen)
         self._port = self._listener.port
-        label = ttk.Label(self, text="port: %s" % self._port)
-        label.pack(side="bottom", fill="x")
+#        label = ttk.Label(self, text="port: %s" % self._port)
+#        label.pack(side="bottom", fill="x")
 
         self._poll_job_id = None
         self.process = None
         self.after(1, self.start_test)
+
+    def _create_statusbar(self):
+        self.statusbar = ttk.Frame(self)
+        grip = ttk.Sizegrip(self.statusbar)
+        grip.pack(side="right")
+        self.status_label = ttk.Label(self.statusbar, text="", anchor="w")
+        self.status_label.pack(side="left", fill="both", expand="true", padx=8)
+        self.statusbar.pack(side="bottom", fill="x")
+
+    def status_message(self, message):
+        self.status_label.configure(text=message)
 
     def _create_menubar(self):
         self.menubar = tk.Menu(self)
@@ -136,6 +173,13 @@ class RunnerApp(AbstractRwbApp):
         self.notebook.pack(side="top", fill="both", expand=True)
 
     def _create_fonts(self):
+        '''Create fonts specifically for this app
+
+        This app has some unique features such as the big start/stop
+        buttons, so it can't use the font scheme. What it _should_
+        do is at least base the fonts off of the scheme, but for 
+        now we shall march to the beat of our own drummer.
+        '''
         # Throughout the app, fonts will typically be referenced
         # by their name so we don't have to pass references around.
         # Tk named fonts are a wonderful thing. 
@@ -147,9 +191,6 @@ class RunnerApp(AbstractRwbApp):
         fixed_italic_font = self._clone_font("fixed_font", "fixed_italic_font", slant="italic")
         big_font = self._clone_font("default_font", "big_font", size=int(base_size*2.0))
         medium_font = self._clone_font("default_font", "medium_font", size=int(base_size*1.5))
-#        bigButtonFont = tkFont.Font(name="bigButtonFont")
-#        bigButtonFont.configure(**tkFont.nametofont("TkDefaultFont").configure())
-#        bigButtonFont.configure(size=24)
 
         # save a reference to the fonts so they don't get GC'd
         self.fonts = (default_font, fixed_font, fixed_bold_font, fixed_italic_font, 
@@ -162,16 +203,28 @@ class RunnerApp(AbstractRwbApp):
         return new_font                                      
 
     def _listen(self, name, *args):
-        self.robot_log.add(name, *args)
+        self._id += 1
+        self.robot_log.add(self._id, name, *args)
         if name == "log_message":
-            self.robot_messages.add(*args)
-                       
+            self.robot_messages.add(self._id, *args)
+        self.update_statusbar(name, args)
+
         # bleh. I hate how I implemented this. 
         if name == "end_test":
             (name, attrs) = args
             self.tally.add_result(attrs)
             if self.tally.get("critical","fail") > 0:
                 self.value["critical","fail"].configure(foreground="red")
+
+    def update_statusbar(self, event_name, args):
+        '''Update the statusbar based on the passed-in event'''
+        if event_name in ("start_suite", "start_test"):
+            (name, attrs) = args
+            self.status_message(attrs["longname"])
+        elif event_name in ("end_suite", "end_test"):
+            self.status_message("")
+        elif event_name == "close":
+            self.status_message(str(self.tally))
 
     def start_test(self):
         self.robot_log.reset()
@@ -181,7 +234,6 @@ class RunnerApp(AbstractRwbApp):
         self.start_button.configure(state="disabled")
         here = os.path.dirname(__file__)
         listener = os.path.join(here, "socket_listener.py:%s" % self._port)
-#        listener = "rwb/runner/socket_listener.py:%s" % self._port
         args = ["--listener", listener, "--log", "NONE", "--report", "NONE"]
         files = sys.argv[1:]
         # if user used option --runner 'blah', use that; otherwise,
@@ -189,8 +241,7 @@ class RunnerApp(AbstractRwbApp):
         cmdstring = "python -m robot.runner"
         cmd = shlex.split(cmdstring) + args + files
         self.log.debug("command:" + " ".join(cmd))
-#        print "cmd:", cmd
-        self.robot_log.add("start_process", cmd)
+        self.robot_log.add(self._id, "start_process", cmd)
         self.process = Process(cmd)
         if self._poll_job_id is not None:
             self.after_cancel(self._poll_job_id)

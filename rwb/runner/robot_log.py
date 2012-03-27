@@ -18,35 +18,35 @@ class RobotLog(tk.Frame):
         self.tree.tag_configure("WARN", foreground="#663300")
         self._nodes = [""]
 
-    def _start_process(self, string):
+    def _start_process(self, event_id, string):
         parent = self._nodes[-1]
         node = self.tree.insert(parent, "end", text=string, open=True)
         self._nodes.append(node)
         
-    def _start_suite(self,name, attrs):
+    def _start_suite(self, event_id,name, attrs):
         parent = self._nodes[-1]
         node = self.tree.insert(parent, "end", text="SUITE %s" % name, open=True)
         self._nodes.append(node)
 
-    def _end_suite(self, *args):
+    def _end_suite(self, event_id, *args):
         node = self._nodes.pop()
 
-    def _start_test(self, name, attrs):
+    def _start_test(self, event_id, name, attrs):
         parent = self._nodes[-1]
         node = self.tree.insert(parent, "end", text="TEST: %s" % name, open=False)
         self._nodes.append(node)
 
-    def _end_test(self,name, attrs):
+    def _end_test(self, event_id,name, attrs):
         node = self._nodes.pop()
         self.tree.item(node, tags=(attrs["status"]))
 
-    def _start_keyword(self, name, attrs):
+    def _start_keyword(self, event_id, name, attrs):
         parent = self._nodes[-1]
         string = "KEYWORD %s" % (" | ".join([name] + attrs["args"]))
         node = self.tree.insert(parent, "end", text=string, open=False)
         self._nodes.append(node)
 
-    def _end_keyword(self, name, attrs):
+    def _end_keyword(self, event_id, name, attrs):
         node = self._nodes.pop()
         if attrs["status"] == "FAIL":
             self.tree.item(node, tags=("FAIL"))
@@ -57,25 +57,25 @@ class RobotLog(tk.Frame):
         else:
             self.tree.item(node, tags=("PASS"))
 
-    def _log_message(self, attrs):
+    def _log_message(self, event_id, attrs):
         parent = self._nodes[-1]
         if attrs["level"] in ("INFO","WARN","ERROR"):
             string = "%s: %s" % (attrs["level"], attrs["message"].replace("\n", "\\n"))
             node = self.tree.insert(parent, "end", text=string, open=False)
 
-    def _message(self, message):
+    def _message(self, event_id, message):
         pass
-    def _output_file(self, path):
+    def _output_file(self, event_id, path):
         pass
-    def _log_file(self, path):
+    def _log_file(self, event_id, path):
         pass
-    def _report_file(self, path):
+    def _report_file(self, event_id, path):
         pass
-    def _debug_file(self, path):
+    def _debug_file(self, event_id, path):
         pass
-    def _close(self):
+    def _close(self, *args):
         pass
-    def _pid(self, *args):
+    def _pid(self, event_id, *args):
         print "pid:", args
         pass
 
@@ -84,7 +84,7 @@ class RobotLog(tk.Frame):
         for item in self.tree.get_children(""):
             self.tree.delete(item)
 
-    def add(self, method, *args):
+    def add(self, event_id, method, *args):
         map = {"start_suite":   self._start_suite,
                "end_suite":     self._end_suite,
                "start_test":    self._start_test,
@@ -102,7 +102,7 @@ class RobotLog(tk.Frame):
                "start_process": self._start_process,
                }
         func = map[method]
-        func(*args)
+        func(event_id, *args)
         
 class old_RobotLog(tk.Frame):
 

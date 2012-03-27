@@ -537,6 +537,7 @@ class EditorApp(tk.Tk, EditorAPI):
 
         run_menu = tk.Menu(self.menubar, tearoff=False)
         run_menu.add_command(label="Run current test suite", command=self._on_run_current)
+        run_menu.add_command(label="Dry run of current test suite", command=self._on_dry_run)
         self.menubar.add_cascade(label="Run", menu=run_menu)
 
         help_menu = tk.Menu(self.menubar, tearoff=False)
@@ -555,6 +556,22 @@ class EditorApp(tk.Tk, EditorAPI):
         self.help_menu = help_menu
         self.run_menu = run_menu
 
+    def _run(self, *args):
+        cmd = "python -m rwb.runner " + " ".join(['%s' % x for x in args])
+        print "cmd:", cmd
+        os.system(cmd + "&")
+
+    def _on_dry_run(self, event=None):
+        page = self.notebook.get_current_page()
+        if page.path is None:
+            message = "You must first save this to a file before running"
+            tkMessageBox.showwarning(parent=self, 
+                                     title="Sorry about this...",
+                                     message=message)
+            return
+        self.save(page)
+        self._run("--runmode", "DryRun", page.path)
+        
     def _on_run_current(self, event=None):
         page = self.notebook.get_current_page()
         if page.path is None:

@@ -214,11 +214,11 @@ class EditorApp(tk.Tk, EditorAPI):
                            command=lambda: self._send_event_to_focused_window("<<Paste>>"))
 
         save.pack(side="left")
-        ttk.Separator(self.toolbar, orient="vertical").pack(side="left", fill="y", pady=4, padx=4)
+        ttk.Separator(self.toolbar, orient="vertical").pack(side="left", fill="y", pady=8, padx=4)
         cut.pack(side="left")
         copy.pack(side="left")
         paste.pack(side="left")
-        ttk.Separator(self.toolbar, orient="vertical").pack(side="left", fill="y", pady=4)
+        ttk.Separator(self.toolbar, orient="vertical").pack(side="left", fill="y", pady=8, padx=4)
 
         self.searchentry  = SearchEntry(self, width=40)
         self.searchentry.pack(in_=self.toolbar, side="right", padx=(0,4))

@@ -78,8 +78,9 @@ class RunnerApp(AbstractRwbApp):
     def _create_menubar(self):
         self.menubar = tk.Menu(self)
         self.configure(menu=self.menubar)
-        self.fileMenu = tk.Menu(self, tearoff=False)
+        self.fileMenu = tk.Menu(self.menubar, tearoff=False)
         self.fileMenu.add_command(label="Exit", command=self._on_exit)
+        self.menubar.add_cascade(menu=self.fileMenu, label="File", underline=0)
     
     def _create_toolbar(self):
         self.toolbar = ttk.Frame(self)
@@ -256,9 +257,11 @@ class RunnerApp(AbstractRwbApp):
         self.start_button.configure(state="normal")
 
     def _on_exit(self):
+        self._poll_job_id
+        if self._poll_job_id:
+            self.after_cancel(self._poll_job_id)
         self.destroy()
         sys.exit(0)
-
 
         
 if __name__ == "__main__":

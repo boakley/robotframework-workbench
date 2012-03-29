@@ -8,7 +8,10 @@ class EditorAPI(object):
         self._tools.append(tool_class(self))
 
     def get_current_editor(self):
-        return self.notebook.get_current_page().get_text_widget()
+        page = self.notebook.get_current_page()
+        if page is None:
+            return None
+        return page.get_text_widget()
 
     def get_setting(self, key, default=None):
         '''Return a setting for the given key

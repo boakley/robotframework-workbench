@@ -435,7 +435,7 @@ class EditorApp(tk.Tk, EditorAPI):
         file_menu = tk.Menu(self.menubar, tearoff=False)
         accelerators = {}
         keymap = self.get_setting("editor.keymap", None)
-        platform = "Darwin" if keymap == "mac" else platform.system()
+        p = "Darwin" if keymap == "mac" else platform.system()
         # this is gross. 
         for p in ("Darwin", "Linux", "Windows"):
             if keymap == "mac" and platform != "Darwin":
@@ -459,47 +459,47 @@ class EditorApp(tk.Tk, EditorAPI):
                 }
 
         file_menu.add_command(label="New",
-                             accelerator=accelerators[platform]["new"],
+                             accelerator=accelerators[p]["new"],
                              command=lambda: self.event_generate("<<New>>"))
         file_menu.add_command(label="Open...", 
-                             accelerator=accelerators[platform]["open"],
+                             accelerator=accelerators[p]["open"],
                              command=lambda: self.event_generate("<<Open>>"))
         file_menu.add_cascade(label="Open Recent",
                              menu = self.recentFilesMenu)
         file_menu.add_command(label="Save",
-                             accelerator=accelerators[platform]["save"],
+                             accelerator=accelerators[p]["save"],
                              command=lambda: self.event_generate("<<Save>>"))
         file_menu.add_command(label="Save As...",
                              command=lambda: self.event_generate("<<SaveAs>>"))
         file_menu.add_separator()
         file_menu.add_command(label="Exit", 
-                             accelerator=accelerators[platform]["exit"],
+                             accelerator=accelerators[p]["exit"],
                              command=self.OnExit)
         self.menubar.add_cascade(label="File", menu=file_menu)
 
         edit_menu = tk.Menu(self.menubar, tearoff=False)
         edit_menu.add_command(label="Find", underline=0,
-                             accelerator=accelerators[platform]["find"],
+                             accelerator=accelerators[p]["find"],
                              command=lambda: self._send_event_to_focused_window("<<Find>>"))
         edit_menu.add_command(label="Find Next", underline=5,
-                             accelerator=accelerators[platform]["find_next"],
+                             accelerator=accelerators[p]["find_next"],
                              command=lambda: self._send_event_to_focused_window("<<FindNext>>"))
         edit_menu.add_separator()
         edit_menu.add_command(label="Undo", underline=0,
-                             accelerator=accelerators[platform]["undo"],
+                             accelerator=accelerators[p]["undo"],
                              command=lambda: self._send_event_to_focused_window("<<Undo>>"))
         edit_menu.add_command(label="Redo", underline=0,
-                             accelerator=accelerators[platform]["redo"],
+                             accelerator=accelerators[p]["redo"],
                              command=lambda: self._send_event_to_focused_window("<<Redo>>"))
         edit_menu.add_separator()
         edit_menu.add_command(label="Cut", underline=2, 
-                             accelerator=accelerators[platform]["cut"],
+                             accelerator=accelerators[p]["cut"],
                              command=lambda: self._send_event_to_focused_window("<<Cut>>"))
         edit_menu.add_command(label="Copy", underline=0, 
-                             accelerator=accelerators[platform]["copy"],
+                             accelerator=accelerators[p]["copy"],
                              command=lambda: self._send_event_to_focused_window("<<Copy>>"))
         edit_menu.add_command(label="Paste", underline=0, 
-                             accelerator=accelerators[platform]["paste"],
+                             accelerator=accelerators[p]["paste"],
                              command=lambda: self._send_event_to_focused_window("<<Paste>>"))
         self.menubar.add_cascade(label="Edit", menu=edit_menu)
 
@@ -507,10 +507,10 @@ class EditorApp(tk.Tk, EditorAPI):
         zoom_menu = tk.Menu(self.menubar, tearoff=False)
         view_menu.add_cascade(label="Zoom", menu=zoom_menu)
         zoom_menu.add_command(label="Zoom In", 
-                             accelerator=accelerators[platform]["zoomin"],
+                             accelerator=accelerators[p]["zoomin"],
                              command=lambda: self.event_generate("<<ZoomIn>>"))
         zoom_menu.add_command(label="Zoom Out", 
-                             accelerator=accelerators[platform]["zoomout"],
+                             accelerator=accelerators[p]["zoomout"],
                              command=lambda: self.event_generate("<<ZoomOut>>"))
         self.menubar.add_cascade(label="View", menu=view_menu)
 

@@ -1,4 +1,6 @@
+===============================
 Robot Framework Workbench (rwb)
+===============================
 
 Overview
 ========
@@ -15,7 +17,7 @@ These tools requires python 2.6 and robot framework 2.6 or
 greater. They have not yet been tested with robot framework 2.7
 
 
-LICENSE
+License
 =======
 The Robot Framework Workbench (RWB) is released under the terms of
 Apache License 2.0. For more information read the file LICENSE.txt or

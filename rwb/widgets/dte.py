@@ -35,6 +35,20 @@ def timeit(func):
         return res
     return wrapper
 
+class QuietIntVar(tk.IntVar):
+    '''
+    I'm getting "can't unset "::__countx__": no such variable
+    in the destructor of the variable for some reason. This wraps
+    the destructor in a try block so they can be ignored.
+    '''
+    def __del__(self):
+        try:
+            self._tk.globalunsetvar(self._name)
+        except:
+            print "D'oh!"
+            pass
+
+
 class DynamicTableEditor(tk.Text, HighlightMixin):
     '''A text widget with some magic for managing columns of data separated with pipes'''
     def __init__(self, *args, **kwargs):
@@ -42,7 +56,8 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         font = self.cget("font")
         self.log = logging.getLogger("dte")
 
-        self.tmpvar = tk.IntVar(master=self, name="::__countx__")
+        self.tmpvar = QuietIntVar(master=self, name="::__countx__")
+#        self.tmpvar = tk.IntVar(master=self, name="::__countx__")
 
         # add a special bind tag before the class binding so we can
         # preempt the default bindings when the completion window is

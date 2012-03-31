@@ -10,8 +10,13 @@ class AbstractRwbApp(tk.Tk):
         # as a themed background for the app as a whole.
         background=ttk.Frame(self)
         background.place(x=0, y=0, relwidth=1, relheight=1)
+
         self._initialize_logging(name)
         self.log.debug("logging has been initiated")
+
+        s = ttk.Style()
+        s.configure("Toolbutton", anchor="c")
+
 
     def _initialize_logging(self, name):
         formatter = logging.Formatter("%(levelname)s: %(module)s.%(funcName)s: %(message)s")
@@ -22,3 +27,4 @@ class AbstractRwbApp(tk.Tk):
         root_logger.setLevel(logging.DEBUG)
         root_logger.addHandler(handler)
         self.log = logging.getLogger(name)
+

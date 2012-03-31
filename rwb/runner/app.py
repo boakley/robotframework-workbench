@@ -38,7 +38,7 @@ from tsubprocess import Process
 import shlex
 
 class RunnerApp(AbstractRwbApp):
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         AbstractRwbApp.__init__(self, "rwb.runner")
         self.wm_geometry("800x600")
         self.tally = RobotTally()

@@ -17,6 +17,7 @@ limitations under the License.
 from autoscrollbar import AutoScrollbar
 from statusbar import Statusbar
 from searchentry import SearchEntry, SearchBox
+from settings_dialog import SettingsDialog
 from highlight_mixin import HighlightMixin
 from textfinder import TextFinder
 from dte import DynamicTableEditor

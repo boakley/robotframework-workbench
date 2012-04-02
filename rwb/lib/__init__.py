@@ -17,9 +17,10 @@ limitations under the License.
 import colors
 import fonts
 import configobj
-from rwbapp import AbstractRwbApp
 from keywordtable import KeywordTable
 from colors import ColorScheme
 from fonts import FontScheme
+from settings_frame import AbstractSettingsFrame
+from rwbapp import AbstractRwbApp
 
 

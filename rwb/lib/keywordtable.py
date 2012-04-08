@@ -10,6 +10,7 @@ import xml.etree.ElementTree as ET
 from robot.parsing.model import ResourceFile, TestCaseFile
 from robot.running import TestLibrary
 from robot.errors import DataError
+import robot.libraries
 import time
 import logging
 

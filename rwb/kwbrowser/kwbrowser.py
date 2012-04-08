@@ -184,9 +184,10 @@ class KwBrowser(ttk.Frame):
 
         self.text.tag_configure("name", font=self.app.fonts.heading)
         self.text.tag_configure("args", font=self.app.fonts.italic)
-        self.text.tag_configure("example", background="lightgray")
+        self.text.tag_configure("example", background="lightgray", font=self.app.fonts.fixed)
         self.text.tag_configure("search_string", background="yellow", 
                                 borderwidth=1, relief="raised")
+        self.text.tag_raise("sel")
 
         return dataframe
 

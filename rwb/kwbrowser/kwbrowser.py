@@ -224,10 +224,10 @@ class KwBrowser(ttk.Frame):
         self.text.delete(1.0, "end")
 
         sql_result = self.kwdb.execute('''
-            SELECT kw.name, kw.id, kw.doc, kw.args, c.name,
+            SELECT kw.name, kw.id, kw.doc, kw.args, c.name, c.type
             FROM keyword_table as kw
             JOIN collection_table as c
-            WHERE kw.id == ?
+            WHERE kw.id == ? AND c.id == kw.collection_id
         ''', (kwid,))
         (kw_name, kw_id, kw_doc, kw_args, 
          collection_name, collection_type) = sql_result.fetchone()

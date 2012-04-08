@@ -1,14 +1,23 @@
-'''Colors - define application-wide color scheme'''
+'''
+Copyright (c) 2012 Bryan Oakley
 
-# these colors came from here:
-# http://www.colorcombos.com/color-schemes/218/ColorCombo218.html
-# background1 = "#dddddd"
-# background2 = "#3f547f"
-# background3 = "#ffffff"
-# accent = "#f58735"
-# foreground1 = "#000000"
-# foreground2 = background1
-# foreground3 = background3
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+'''
+
+# This is just a shell of what it could be. Right now I'm not really
+# everaging these in very many places. For the most part it's just
+# a good place to define the accent, error and warning  colors.
 
 class ColorScheme(object):
     '''Define a standard color palette'''
@@ -20,4 +29,7 @@ class ColorScheme(object):
         self.background2 = "#CCCC99"
         self.foreground1 = "#FFFFFF"
         self.foreground2 = "#000000"
-
+        self.warn = "#663300"
+        self.error = "#b22222"
+        self.test_pass = "#009900"
+        self.test_fail = "#b22222"

@@ -11,11 +11,13 @@ from robot.parsing.model import ResourceFile, TestCaseFile
 from robot.running import TestLibrary
 from robot.errors import DataError
 import time
+import logging
 
 class KeywordTable(object):
     '''A SQLite database of keywords'''
     def __init__(self, dbfile=":memory:"):
         self.db = sqlite3.connect(dbfile)
+        self.log = logging.getLogger()
         self._init_db()
 
     def get_collections(self, pattern=None):
@@ -154,6 +156,40 @@ class KeywordTable(object):
                 for arg_element in args_element.findall("arg"):
                     kw_args.append(arg_element.text)
             self._add_keyword(collection_id, kw_name, kw_doc, kw_args)
+
+    def add_built_in_libraries(self):
+        # try to load all libraries installed with robot
+        # I'm not a big fan of this solution but I like the
+        # end result, so I deem it Good Enough for now.
+        import robot
+        libdir = os.path.dirname(robot.libraries.__file__)
+
+        loaded = []
+        for filename in os.listdir(libdir):
+            if filename.endswith(".py") or filename.endswith(".pyc"):
+                libname, ext = os.path.splitext(filename)
+                if (libname.lower() not in loaded and 
+                    not self._should_ignore(libname)):
+
+                    # N.B. remote library has no default constructor
+                    # so to speak; importing it will fail because it
+                    # requires an argument.
+                    try:
+                        self.log.debug("adding library '%s'" % libname)
+                        self.add_library(libname)
+                        loaded.append(libname.lower())
+                    except Exception, e:
+                        # need a better way to log this...
+                        self.log.debug("unable to add library: " + str(e))
+
+    def _should_ignore(self, name):
+        '''Return True if a given library name should be ignored'''
+        _name = name.lower()
+        return (_name.startswith("deprecated") or
+                _name.startswith("_") or
+                _name == "remote" or
+                _name == "easter" or
+                _name == "reserved")
 
     def execute(self, *args):
         '''Execute an SQL query'''

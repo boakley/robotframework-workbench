@@ -9,13 +9,11 @@ import sys
 import Tkinter as tk
 import tkFileDialog, tkMessageBox
 import ttk
-import robot.libraries
-from rwb.widgets import AutoScrollbar
 from rwb.widgets import Statusbar
 from rwb.lib import AbstractRwbApp
 from kwbrowser import KwBrowser
 
-NAME="bwbrowser"
+NAME="kwbrowser"
 DEFAULT_SETTINGS={
     NAME: {
         "hide_private": True,

@@ -2,7 +2,6 @@ import Tkinter as tk
 import ttk
 import tkMessageBox
 import tkFileDialog
-import tkFont
 import sys
 import logging
 import os
@@ -17,8 +16,6 @@ from rwb.widgets import ToolButton
 from rwb.images import data as icons
 from rwb.lib.keywordtable import KeywordTable
 from rwb.lib.configobj import ConfigObj
-from rwb.lib.colors import ColorScheme
-from rwb.lib.fonts import FontScheme
 from about_dialog import AboutBoxDialog
 from api import EditorAPI
 from custom_notebook import CustomNotebook
@@ -38,12 +35,13 @@ from custom_notebook import CustomNotebook
 
 import os.path
 here = os.path.abspath(os.path.dirname(__file__))
+NAME="editor"
 DEFAULT_SETTINGS = {
-    "editor": {
+    NAME: {
         "recent files": [],
-        },
-    "extensions": {
-        "transmogrifier": os.path.join(here, "extensions", "transmogrifier.py"),
+        "extensions": {
+            "transmogrifier": os.path.join(here, "extensions", "transmogrifier.py"),
+            }
         }
     }
 
@@ -51,19 +49,15 @@ DOCDIR = r'\\chiprodfs01\talos\Documentation'
 MIN_FONT_SIZE = 8
 
 class EditorApp(AbstractRwbApp, EditorAPI):
-    name = "rwb.editor"
     def __init__(self):
-        AbstractRwbApp.__init__(self, self.name)
+        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
 #        tk.Tk.__init__(self, *args, **kwargs)
         EditorAPI.__init__(self)
 
-        self.colors = ColorScheme()
-        self.fonts = FontScheme()
-
         self.extensions = {}
 
-        self._initialize_logging(self.name)
-        self._initialize_preferences()
+#        self._initialize_logging(self.name)
+#        self._initialize_preferences()
         self._initialize_keyword_database()
         self.loaded_files = {}
         self.wm_geometry("800x600")
@@ -75,10 +69,15 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         self.notebook.pack(side="top", fill="both", expand="true", pady=(4,0))
         self._add_bindings()
 
+        extensions = self.get_setting("editor.extensions")
         for (name, path) in self.get_setting("editor.extensions", {}).iteritems():
             name = "extension_" + name
-            self.extensions[name] = imp.load_source(name, path)
-            self.extensions[name].__extend__(self)
+            self.log.debug("loading extension " + name + " from path: " + path)
+            try:
+                self.extensions[name] = imp.load_source(name, path)
+                self.extensions[name].__extend__(self)
+            except Exception, e:
+                self.log.warning("unable to load extension '%s' from '%s': %s" % (name, path, str(e)))
 
         if (len(sys.argv)) > 1:
             self.after_idle(self.open, *sys.argv[1:])

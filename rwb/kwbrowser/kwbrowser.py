@@ -3,15 +3,14 @@
 import Tkinter as tk
 import ttk
 from rwb.widgets import AutoScrollbar, SearchBox
-from rwb.lib import ColorScheme, FontScheme, KeywordTable
+from rwb.lib import KeywordTable
 
 ALL_ID = ""
 class KwBrowser(ttk.Frame):
     '''A widget designed to view keyword documentation'''
-    def __init__(self, parent, *args, **kwargs):
-        ttk.Frame.__init__(self, parent, *args, **kwargs)
-        self.colors = ColorScheme()
-        self.fonts = FontScheme()
+    def __init__(self, app, *args, **kwargs):
+        self.app = app
+        ttk.Frame.__init__(self, app, *args, **kwargs)
         self.kwdb = KeywordTable()
 
         self._create_ui()
@@ -132,7 +131,7 @@ class KwBrowser(ttk.Frame):
             maxwidth = max(maxwidth, len(collection_name))
 
         # the +16 is for the space reserved for the image in the TreeView
-        width = self.fonts.default.measure("M"*maxwidth) + 16
+        width = self.app.fonts.default.measure("M"*maxwidth) + 16
         self.lib_tree.column("#0", width=width)
         
     def _create_ui(self):
@@ -142,7 +141,7 @@ class KwBrowser(ttk.Frame):
         self.filter.entry.bind("<Up>", self._on_up)
 
         pw = tk.PanedWindow(self, orient="vertical", borderwidth=0, 
-                            background=self.colors.accent,
+                            background=self.app.colors.accent,
                             sashwidth=4, sashpad=0)
         listframe = self._create_list(pw)
         dataframe = self._create_data(pw)
@@ -156,7 +155,7 @@ class KwBrowser(ttk.Frame):
         dataframe = ttk.Frame(parent, borderwidth=1, relief="sunken")
 
         self.text = CustomText(dataframe, wrap="word", borderwidth=0, width=120, 
-                               font=self.fonts.default, highlightthickness=0)
+                               font=self.app.fonts.default, highlightthickness=0)
         self.text_ysb = AutoScrollbar(dataframe, orient="vertical", command=self.text.yview)
         self.text.configure(yscrollcommand=self.text_ysb.set)
 
@@ -165,8 +164,8 @@ class KwBrowser(ttk.Frame):
         dataframe.grid_rowconfigure(0, weight=1)
         dataframe.grid_columnconfigure(0, weight=1)
 
-        self.text.tag_configure("name", font=self.fonts.heading)
-        self.text.tag_configure("args", font=self.fonts.italic)
+        self.text.tag_configure("name", font=self.app.fonts.heading)
+        self.text.tag_configure("args", font=self.app.fonts.italic)
         self.text.tag_configure("example", background="lightgray")
         self.text.tag_configure("search_string", background="yellow", 
                                 borderwidth=1, relief="raised")
@@ -225,14 +224,17 @@ class KwBrowser(ttk.Frame):
         self.text.delete(1.0, "end")
 
         sql_result = self.kwdb.execute('''
-            SELECT kw.name, kw.id, kw.doc, kw.args, c.name
+            SELECT kw.name, kw.id, kw.doc, kw.args, c.name,
             FROM keyword_table as kw
             JOIN collection_table as c
             WHERE kw.id == ?
         ''', (kwid,))
-        (kw_name, kw_id, kw_doc, kw_args, collection_name) = sql_result.fetchone()
+        (kw_name, kw_id, kw_doc, kw_args, 
+         collection_name, collection_type) = sql_result.fetchone()
 
         self.text.insert("end", kw_name + "\n", "name", "\n")
+        if collection_type == "library" and collection_name != "BuiltIn":
+            self.text.insert("end", "| Library | %s \n\n" % collection_name)
         if len(kw_args) > 0:
             self.text.insert("end", "Arguments: %s\n\n" % kw_args, "args")
         self.text.insert("end", kw_doc)

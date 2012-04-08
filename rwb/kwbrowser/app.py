@@ -15,10 +15,18 @@ from rwb.widgets import Statusbar
 from rwb.lib import AbstractRwbApp
 from kwbrowser import KwBrowser
 
+NAME="bwbrowser"
+DEFAULT_SETTINGS={
+    NAME: {
+        "hide_private": True,
+        "search_both": True,
+        }
+}
+
 class KwBrowserApp(AbstractRwbApp):
     '''A Tkinter application that wraps the browser frame'''
     def __init__(self, *args, **kwargs):
-        AbstractRwbApp.__init__(self, "rwb.kwbrowser")
+        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
         self.wm_geometry("800x600")
         self.working_set = sys.argv[1:]
 

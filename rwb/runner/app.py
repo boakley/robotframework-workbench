@@ -37,9 +37,19 @@ from rwb.lib import AbstractRwbApp
 from tsubprocess import Process
 import shlex
 
+NAME="runner"
+
+DEFAULT_SETTINGS = {
+    NAME: {
+        "pybot": "python -m robot.runner",
+        }
+    }
+
 class RunnerApp(AbstractRwbApp):
     def __init__(self):
-        AbstractRwbApp.__init__(self, "rwb.runner")
+        # Among other things, this constructor initializes
+        # logging snd preferences. 
+        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
         self.wm_geometry("800x600")
         self.tally = RobotTally()
         self._create_fonts()
@@ -78,15 +88,17 @@ class RunnerApp(AbstractRwbApp):
     def _create_menubar(self):
         self.menubar = tk.Menu(self)
         self.configure(menu=self.menubar)
-        self.fileMenu = tk.Menu(self.menubar, tearoff=False)
-        self.fileMenu.add_command(label="Exit", command=self._on_exit)
-        self.menubar.add_cascade(menu=self.fileMenu, label="File", underline=0)
+
+        self.file_menu = tk.Menu(self.menubar, tearoff=False)
+        self.file_menu.add_command(label="Exit", command=self._on_exit)
+
+        self.menubar.add_cascade(menu=self.file_menu, label="File", underline=0)
     
     def _create_toolbar(self):
         self.toolbar = ttk.Frame(self)
         self.toolbar.pack(side="top", fill="x", padx=8)
         s = ttk.Style()
-        s.configure('BigButton.TButton', font="big_font")
+        s.configure('BigButton.TButton', font=self.fonts.big_font)
         self.start_button = ttk.Button(self.toolbar, text="Start", 
                                        command=self.start_test, 
                                        style="BigButton.TButton", 
@@ -105,22 +117,22 @@ class RunnerApp(AbstractRwbApp):
             }
         value = {
             ("critical","pass"): ttk.Label(self.toolbar, text="38", width=5, 
-                                       font="big_font", anchor="e", 
+                                       font=self.fonts.big_font, anchor="e", 
                                        textvariable=self.tally["critical","pass"]),
             ("critical","fail"): ttk.Label(self.toolbar, text="0", width=5, 
-                                       font="big_font", anchor="e",
+                                       font=self.fonts.big_font, anchor="e",
                                        textvariable=self.tally["critical","fail"]),
             ("critical","total"): ttk.Label(self.toolbar, text="38", width=5, 
-                                        font="big_font", anchor="e",
+                                        font=self.fonts.big_font, anchor="e",
                                         textvariable=self.tally["critical","total"]),
             ("all","pass"): ttk.Label(self.toolbar, text="38", width=5, 
-                                      font="medium_font", anchor="e",
+                                      font=self.fonts.medium_font, anchor="e",
                                       textvariable=self.tally["all","pass"]),
             ("all","fail"): ttk.Label(self.toolbar, text="0", width=5, 
-                                      font="medium_font", anchor="e",
+                                      font=self.fonts.medium_font, anchor="e",
                                       textvariable=self.tally["all","fail"]),
             ("all","total"): ttk.Label(self.toolbar, text="38", width=5, 
-                                   font="medium_font", anchor="e",
+                                   font=self.fonts.medium_font, anchor="e",
                                   textvariable=self.tally["all","total"]),
             }
 
@@ -184,24 +196,12 @@ class RunnerApp(AbstractRwbApp):
         # Throughout the app, fonts will typically be referenced
         # by their name so we don't have to pass references around.
         # Tk named fonts are a wonderful thing. 
-        default_font = self._clone_font("TkDefaultFont", "default_font")
-        base_size = default_font.cget("size")
-
-        fixed_font = self._clone_font("TkFixedFont", "fixed_font")
-        fixed_bold_font = self._clone_font("fixed_font", "fixed_bold_font", weight="bold")
-        fixed_italic_font = self._clone_font("fixed_font", "fixed_italic_font", slant="italic")
-        big_font = self._clone_font("default_font", "big_font", size=int(base_size*2.0))
-        medium_font = self._clone_font("default_font", "medium_font", size=int(base_size*1.5))
-
-        # save a reference to the fonts so they don't get GC'd
-        self.fonts = (default_font, fixed_font, fixed_bold_font, fixed_italic_font, 
-                      big_font, medium_font)
-
-    def _clone_font(self, original_font_name, new_font_name, **kwargs):
-        new_font = tkFont.Font(name=new_font_name)
-        new_font.configure(**tkFont.nametofont(original_font_name).configure())
-        new_font.configure(**kwargs)
-        return new_font                                      
+        print "creating fonts..."
+        base_size = self.fonts.default.cget("size")
+        self.fonts.big_font = self.fonts.clone_font(self.fonts.default, "big_font", 
+                                                    size=int(base_size*2.0))
+        self.fonts.medium_font = self.fonts.clone_font(self.fonts.default, "medium_font", 
+                                                       size=int(base_size*1.5))
 
     def _listen(self, name, *args):
         self._id += 1
@@ -239,7 +239,9 @@ class RunnerApp(AbstractRwbApp):
         files = sys.argv[1:]
         # if user used option --runner 'blah', use that; otherwise,
         # use "python -m robot.runner". 
-        cmdstring = "python -m robot.runner"
+
+        cmdstring = self.get_setting("runner.pybot", "python -m robot.runner")
+#        cmdstring = "python -m robot.runner"
         cmd = shlex.split(cmdstring) + args + files
         self.log.debug("command:" + " ".join(cmd))
         self.robot_log.add(self._id, "start_process", cmd)

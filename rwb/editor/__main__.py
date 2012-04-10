@@ -1,7 +1,8 @@
-import app
+import rwb
+from app import EditorApp
 try:
-    app = app.EditorApp()
-    app.mainloop()
+    rwb.app = EditorApp()
+    rwb.app.mainloop()
 except KeyboardInterrupt:
     print "program quit at request of the user"
     pass

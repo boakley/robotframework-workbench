@@ -1,7 +1,11 @@
 import sys
-import os
-
 from app import KwBrowserApp
-app = KwBrowserApp()
-app.mainloop()
+import rwb
+
+try:
+    rwb.app = KwBrowserApp()
+    rwb.app.mainloop()
+except KeyboardInterrupt:
+    print "program quit at request of the user"
+    sys.exit(0)
 

@@ -24,6 +24,7 @@ from rwb.lib import AbstractSettingsFrame
 from rwb.lib.configobj import ConfigObj
 from rwb.lib.colors import ColorScheme
 from rwb.lib.fonts import FontScheme
+from rwb.widgets import SettingsDialog
 
 class AbstractRwbApp(tk.Tk):
     def __init__(self, name, default_settings):
@@ -34,6 +35,7 @@ class AbstractRwbApp(tk.Tk):
         background.place(x=0, y=0, relwidth=1, relheight=1)
 
         self.name = name
+        self.settings_dialog = None
         self._save_settings_job = None
         self._initialize_logging(name)
         self._initialize_settings(name, default_settings)
@@ -65,6 +67,11 @@ class AbstractRwbApp(tk.Tk):
         root_logger.setLevel(logging.DEBUG)
         root_logger.addHandler(handler)
         self.log = logging.getLogger(name)
+
+    def show_settings_dialog(self):
+        if self.settings_dialog is None:
+            self.settings_dialog = SettingsDialog(self)
+        self.settings_dialog.show()
 
     def get_settings_frames(self):
         return self._settings_frames

@@ -96,16 +96,13 @@ class Process(object):
 
     def kill(self, sig):
         """Attempt to kill the process if it still seems to be running. """
-        print "BLAM! my pid is", self.pid()
         if self._exit_status is not None:
             raise OSError(errno.ESRCH, os.strerror(errno.ESRCH))
         try:
-            print "killing..."
             result = os.kill(self.pid(), sig)
-            print "done killing?", result
         except OSError, e:
             # not much we can do at this point.
-            print "WTF? Kill throw an error:", e
+            print "WTF? Kill threw an error:", e
 
     def wait(self, flags=0):
         """Wait for the process to end
@@ -128,17 +125,14 @@ class Process(object):
         return exit_status
 
     def terminate(self):
-        print "process.terminate()... sending a signal... pid=", self._process.pid
         # this kills it dead even though robot seems to 
         # explicitly handle SIGTERM. Hmmm. 
         os.kill(self._process.pid, signal.SIGTERM)
 #        self._process.kill(signal.SIGINT)
-        print "done with terminate()..."
 
     def busted_terminate(self, timeout=.5):
         """Attempt to gracefully terminate the process """
 #        self.kill(signal.SIGTERM)
-        print "Sending SIGINT..."
         self.kill(signal.SIGINT)
         try:
             func = RunWithTimeout(self.wait, timeout=timeout)

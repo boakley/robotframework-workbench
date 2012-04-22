@@ -1,5 +1,12 @@
+
 import Tkinter as tk
 class RobotTally(object):
+    '''Class that accumulates robot test results
+
+    This uses the same listener interface as other modules
+    in this package. It stores the data as tkinter IntVar's
+    so that they can be used as textvariables 
+    '''
     def __init__(self):
         self.var = {
             ("critical","pass"): tk.IntVar(0),
@@ -11,7 +18,11 @@ class RobotTally(object):
             ("warnings"): tk.IntVar(0),
             }
 
-    def add_result(self, attrs):
+    def listen(self, event_id, event_name, args):
+        if event_name == "end_test":
+            self._end_test(event_id, *args)
+
+    def _end_test(self, event_id, name, attrs):
         status = "pass" if attrs["status"].lower() == "pass" else "fail"
         if attrs["critical"] == "yes":
             value = self.var["critical", status].get()+1
@@ -21,6 +32,11 @@ class RobotTally(object):
 
         self.var[("all","total")].set(self.var[("all","pass")].get() + self.var[("all","fail")].get())
         self.var["critical","total"].set(self.var["critical","pass"].get() + self.var["critical","fail"].get())
+        
+
+    def reset(self):
+        for var in self.var.values():
+            var.set(0)
 
     def __getitem__(self, key):
         return self.var[key]

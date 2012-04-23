@@ -110,13 +110,15 @@ class AbstractRwbApp(tk.Tk):
         delay = 3000
         if now:
             self.log.debug("writing settings to disk")
+            self.settings.filename = self.settings_path
             self.settings.write()
             if self._save_settings_job is not None:
                 self.after_cancel(self._save_settings_job)
+                self._save_settings_job = None
         else:
             if self._save_settings_job is not None:
                 self.after_cancel(self._save_settings_job)
-            self.after(3000, self.save_settings, True)
+            self._save_settings_job = self.after(3000, self.save_settings, True)
 
     def _initialize_settings(self, name, default_settings = {}):
         '''Creates self.settings, a ConfigObj with the apps settings
@@ -130,16 +132,20 @@ class AbstractRwbApp(tk.Tk):
         else:
             settings_dir = os.environ.get("HOME", os.path.expanduser("~"))
             settings_file = ".rwb.cfg"
-        self.path = os.path.join(settings_dir, settings_file)
-        self.log.debug("settings path: %s" % self.path)
+        self.settings_path = os.path.join(settings_dir, settings_file)
+        self.log.debug("settings path: %s" % self.settings_path)
         
         self.settings = ConfigObj(default_settings)
-        if os.path.exists(self.path):
-            self.log.debug("reading config file '%s'" % self.path)
+
+        if os.path.exists(self.settings_path):
+            self.log.debug("reading config file '%s'" % self.settings_path)
             try:
-                user_settings = ConfigObj(self.path)
+                user_settings = ConfigObj(self.settings_path)
                 self.settings.merge(user_settings[name])
             except Exception, e:
                 # need to report this somewhere useful, and 
                 # make sure it has some useful information
                 self.log.warning("error opening config file: %s" % str(e))
+        else:
+            self.log.debug("no settings file found.")
+

@@ -7,7 +7,7 @@ import shlex
 import logging
 import os
 
-class RunnerController(object):
+class RobotController(object):
     '''A class for controlling the execution of a robot test
     
     This class does *not* run the test; that is done in a separate
@@ -32,6 +32,7 @@ class RunnerController(object):
         self._process = None
         self._listeners = []
         self._args = []
+        self._cwd = os.getcwd()
         self._runner = runner
 
         # every event gets an id, a simple incrementing integer. The plan
@@ -44,7 +45,14 @@ class RunnerController(object):
         # the same purpose... need to think harder about this some day)
         self._id = 0
 
-    def configure(self, args=None, listeners=None, runner=None):
+    def __del__(self):
+        try:
+            if self._poll_job_id is not None:
+                self.after_cancel(self._poll_job_id)
+        except:
+            pass
+
+    def configure(self, args=None, listeners=None, runner=None, cwd=None):
         '''Configure the runner
         args - the arguments to pass to the runner
         listeners - a list of listeners (actually, MVC views)
@@ -53,6 +61,7 @@ class RunnerController(object):
         if args is not None: self._args = args
         if listeners is not None: self._listeners = listeners
         if runner is not None: self._runner = runner
+        if cwd is not None: self._cwd = cwd
 
     def start(self):
         '''Start the test process
@@ -71,7 +80,7 @@ class RunnerController(object):
         cmd = shlex.split(self._runner) + full_args
         logging.debug("command: " + " ".join(cmd))
 
-        self._process = Process(cmd)
+        self._process = Process(cmd, cwd=self._cwd)
         self._listen("start_job", cmd)
         if self._poll_job_id is not None:
             self._parent.after_cancel(self._poll_job_id)
@@ -89,6 +98,7 @@ class RunnerController(object):
             if self._process.exit_code() is not None:
                 # It's dead, Jim.
                 self._listen("stop_job", self._process.exit_code())
+                del self._process
                 self._process = None
 
             self._poll_job_id = self._parent.after(delay, self.poll, delay)
@@ -120,7 +130,7 @@ if __name__ == "__main__":
     messages = RobotLogMessages(root)
     messages.pack(side="top", fill="both", expand=True)
 
-    runner = RunnerController(root)
+    runner = RobotController(root)
     runner.configure(args=sys.argv[1:], listeners=(console,log,messages))
 
     root.after(1, runner.start)

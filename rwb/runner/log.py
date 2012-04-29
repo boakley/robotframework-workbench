@@ -105,7 +105,8 @@ class RobotLogTree(tk.Frame):
         self._init_images()
         tk.Frame.__init__(self, *args, **kwargs)
         self.tree = ttk.Treeview(self, columns=("event_id", "timestamp"),
-                                 displaycolumns=("timestamp",))
+                                 displaycolumns=("timestamp",),
+                                 height=200)
         self.tree.column("#0", stretch=True)
         tswidth = tkFont.nametofont("TkDefaultFont").measure("00:00:00.000")
         self.tree.column("timestamp", width=tswidth+8, stretch=False)
@@ -175,8 +176,10 @@ class RobotLogTree(tk.Frame):
 
     def _start_test(self, event_id, name, attrs):
         parent = self._nodes[-1]
+        starttime = attrs["starttime"].split(" ")[1]
         node = self.tree.insert(parent, "end", text=" %s" % name, 
-                                open=False,image=self._image["test"])
+                                open=False,image=self._image["test"],
+                                values=(event_id, starttime))
         self._nodes.append(node)
 
     def _end_test(self, event_id, name, attrs):
@@ -186,8 +189,10 @@ class RobotLogTree(tk.Frame):
     def _start_keyword(self, event_id, name, attrs):
         parent = self._nodes[-1]
         string = " %s" % (" | ".join([name] + attrs["args"]))
+        starttime = attrs["starttime"].split(" ")[1]
         node = self.tree.insert(parent, "end", text=string, 
-                                open=False,image=self._image["keyword"])
+                                open=False,image=self._image["keyword"],
+                                values=(event_id, starttime))
         self._nodes.append(node)
 
     def _end_keyword(self, event_id, name, attrs):

@@ -141,7 +141,7 @@ class AbstractRwbApp(tk.Tk):
             self.log.debug("reading config file '%s'" % self.settings_path)
             try:
                 user_settings = ConfigObj(self.settings_path)
-                self.settings.merge(user_settings[name])
+                self.settings[name].merge(user_settings[name])
             except Exception, e:
                 # need to report this somewhere useful, and 
                 # make sure it has some useful information

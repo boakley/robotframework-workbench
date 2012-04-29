@@ -19,6 +19,7 @@ from statusbar import Statusbar
 from searchentry import SearchEntry, SearchBox
 from settings_dialog import SettingsDialog
 from highlight_mixin import HighlightMixin
+from text_mixins import TextCallbackMixin
 from textfinder import TextFinder
 from dte import DynamicTableEditor
 from toolbutton import ToolButton

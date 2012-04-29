@@ -9,6 +9,7 @@ import imp
 import urllib2
 import platform
 import subprocess
+from rwb.runner import RobotController
 from rwb.lib import AbstractRwbApp
 from rwb.widgets import Statusbar
 from rwb.widgets import SearchEntry
@@ -19,6 +20,7 @@ from rwb.lib.configobj import ConfigObj
 from about_dialog import AboutBoxDialog
 from api import EditorAPI
 from custom_notebook import CustomNotebook
+from shelf import Shelf
 
 # some things TODO:
 # on focus out of the dte, set the cursor to a block
@@ -39,8 +41,10 @@ NAME="editor"
 DEFAULT_SETTINGS = {
     NAME: {
         "recent files": [],
+        "keymap": "emacs", # not implemented yet. Bummer, that.
         "extensions": {
             "transmogrifier": os.path.join(here, "extensions", "transmogrifier.py"),
+            "keywords": os.path.join(here, "extensions", "keywords.py"),
             }
         }
     }
@@ -56,17 +60,28 @@ class EditorApp(AbstractRwbApp, EditorAPI):
 
         self.extensions = {}
 
+        self._tkvar = {"shelf": tk.IntVar()}
+
 #        self._initialize_logging(self.name)
 #        self._initialize_preferences()
         self._initialize_keyword_database()
         self.loaded_files = {}
-        self.wm_geometry("800x600")
+        self.wm_geometry("900x800")
+
+        self.pw = ttk.PanedWindow(self, orient="vertical")
+
+        self._runner = RobotController(self)
         self._create_menubar()
         self._create_toolbar()
         self._create_statusbar()
         self._create_editor()
+        self._create_shelf()
+
         self.statusbar.pack(side="bottom", fill="x")
-        self.notebook.pack(side="top", fill="both", expand="true", pady=(4,0))
+        self.pw.pack(side="top", fill="both", expand=True)
+        self.pw.add(self.notebook)
+
+        self._update_view()
         self._add_bindings()
 
         extensions = self.get_setting("editor.extensions")
@@ -107,6 +122,9 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         if filename is not None:
             filename = os.path.abspath(filename)
             if filename not in filenames:
+                print "filename is not in filenames"
+                print "filename:", filename
+                print "filenames:", filenames
                 filenames.insert(0, filename)
                 settings["recent files"] = filenames
                 self.save_settings()
@@ -345,6 +363,7 @@ class EditorApp(AbstractRwbApp, EditorAPI):
     def _load_file(self, filename):
         '''Load a file. If the filename is already loaded, select that tab'''
 
+        filename = os.path.abspath(filename)
         try:
             existing_page = self.notebook.get_page_for_path(filename)
             if existing_page is not None:
@@ -352,7 +371,8 @@ class EditorApp(AbstractRwbApp, EditorAPI):
             else:
                 new_page = self.notebook.add_page(filename)
                 recent_files = self.get_setting("editor.recent files", [])
-                recent_files.append(filename)
+                if filename not in recent_files:
+                    recent_files.append(filename)
                 self.save_settings()
                 self._update_recent_files_menu(filename)
 
@@ -404,6 +424,9 @@ class EditorApp(AbstractRwbApp, EditorAPI):
     def _create_statusbar(self):
         self.statusbar = Statusbar(self)
         self.statusbar.add_section("modified", 8)
+
+    def _create_shelf(self):
+        self.shelf = Shelf(self, self._runner)
 
     def _create_editor(self):
         self.notebook = CustomNotebook(self, app=self)
@@ -492,6 +515,8 @@ class EditorApp(AbstractRwbApp, EditorAPI):
 
         view_menu = tk.Menu(self.menubar, tearoff=False)
         zoom_menu = tk.Menu(self.menubar, tearoff=False)
+        view_menu.add_checkbutton(label="Shelf", variable=self._tkvar["shelf"], onvalue=1, offvalue=0,
+                                  command=self._update_view)
         view_menu.add_cascade(label="Zoom", menu=zoom_menu)
         zoom_menu.add_command(label="Zoom In", 
                              accelerator=accelerators[p]["zoomin"],
@@ -523,8 +548,9 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         # self.menubar.add_cascade(label="Tools", menu=toolsMenu)
 
         run_menu = tk.Menu(self.menubar, tearoff=False)
-        run_menu.add_command(label="Run current test suite", command=self._on_run_current)
-        run_menu.add_command(label="Dry run of current test suite", command=self._on_dry_run)
+        run_menu.add_command(label="Run", command=self._on_run)
+        run_menu.add_command(label="Run in separate window", command=self._on_run_separate)
+        run_menu.add_command(label="Dry run", command=self._on_dry_run)
         self.menubar.add_cascade(label="Run", menu=run_menu)
 
         help_menu = tk.Menu(self.menubar, tearoff=False)
@@ -543,23 +569,41 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         self.help_menu = help_menu
         self.run_menu = run_menu
 
-    def _run(self, *args):
-        cmd = "python -m rwb.runner " + " ".join(['%s' % x for x in args])
-        print "cmd:", cmd
-        os.system(cmd + "&")
+#        self._not_implemented_yet()
 
-    def _on_dry_run(self, event=None):
+    def _show_shelf(self):
+        self._tkvar["shelf"].set(1)
+        self._update_view()
+        
+    def _update_view(self):
+        show_shelf = self._tkvar["shelf"].get()
+        try:
+            if show_shelf: self.pw.add(self.shelf)
+            else: self.pw.forget(self.shelf)
+        except:
+            pass
+        
+    def _on_run(self, extra_args=None):
+        self._show_shelf()
         page = self.notebook.get_current_page()
         if page.path is None:
             message = "You must first save this to a file before running"
             tkMessageBox.showwarning(parent=self, 
                                      title="Sorry about this...",
                                      message=message)
-            return
-        self.save(page)
-        self._run("--runmode", "DryRun", page.path)
+        else:
+            self.save(page)
+            args = ["python","-m", "robot.runner"]
+            if extra_args is not None:
+                args = args + extra_args
+            args.append(page.path)
+            self._runner.configure(args=args, cwd=os.getcwd())
+            self._runner.start()
+
+    def _on_dry_run(self, event=None):
+        self._on_run(extra_args = ["--runmode", "DryRun"])
         
-    def _on_run_current(self, event=None):
+    def _on_run_separate(self, event=None):
         page = self.notebook.get_current_page()
         if page.path is None:
             message = "You must first save this to a file before running"

@@ -18,9 +18,16 @@ class RobotTally(object):
             ("warnings"): tk.IntVar(0),
             }
 
+    def _log_message(self, event_id, attrs):
+        if attrs["level"] == "WARN":
+            self.var["warnings"].set(self.var["warnings"].get()+1)
+
+
     def listen(self, event_id, event_name, args):
         if event_name == "end_test":
             self._end_test(event_id, *args)
+        if event_name == "log_message":
+            self._log_message(event_id, *args)
 
     def _end_test(self, event_id, name, attrs):
         status = "pass" if attrs["status"].lower() == "pass" else "fail"
@@ -45,10 +52,10 @@ class RobotTally(object):
         return self.var[keys].get()
 
     def __str__(self):
-        (cpass, cfail, ctotal, apass, afail, atotal) = self.summary()
+        (cpass, cfail, ctotal, apass, afail, atotal, warnings) = self.summary()
         critical = "%s critical tests, %s passed, %s failed." % (ctotal, cpass, cfail)
         total = "%s tests total, %s passed, %s failed." % (atotal, apass, afail)
-        return critical + " " + total
+        return critical + " " + total + " %s warnings" % warnings
 
     def summary(self):
         '''Return a summary of the test result
@@ -64,5 +71,5 @@ class RobotTally(object):
                 self.var["all","pass"].get(),
                 self.var["all","fail"].get(),
                 self.var["all","total"].get(),
-#                self.var["warnings"].get(),
+                self.var["warnings"].get(),
                 )

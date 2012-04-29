@@ -23,3 +23,4 @@ from text_mixins import TextCallbackMixin
 from textfinder import TextFinder
 from dte import DynamicTableEditor
 from toolbutton import ToolButton
+from tabnotebook import BottomTabNotebook

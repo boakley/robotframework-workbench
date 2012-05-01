@@ -13,6 +13,7 @@ class BottomTabNotebook(ttk.Frame):
         self.container = tk.Frame(self, width=800, height=400, borderwidth=1, relief="sunken")
         self.container.pack(side="right", fill="both", expand=True)
         self._current = None
+        self._redraw_job = None
         self.canvas.bind("<Configure>", self._on_configure)
 
     def add(self, widget, text=None):
@@ -44,7 +45,9 @@ class BottomTabNotebook(ttk.Frame):
 
     def _on_configure(self, event):
         '''Redraw the tabs when the canvas changes size'''
-        self.redraw(self._current)
+        if self._redraw_job is not None:
+            self.after_cancel(self._redraw_job)
+        self._redraw_job = self.after(500, self.redraw, self._current)
 
 class NotebookTab(object):
     def __init__(self, notebook, name, widget):

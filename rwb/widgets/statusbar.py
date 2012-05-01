@@ -7,14 +7,20 @@ COLORS = ("#000000", "#111111","#222222","#333333",
           "#444444", "#555555","#666666","#777777",
           "#888888", "#999999","#AAAAAA","#BBBBBB")
 
-class Statusbar(ttk.Frame):
+class Statusbar(tk.Frame):
     '''A statusbar widget'''
-    def __init__(self, *args, **kwargs):
-        ttk.Frame.__init__(self, *args, **kwargs)
+    def __init__(self, parent):
+        tk.Frame.__init__(self, parent)
+        self.bg = self.winfo_toplevel().cget("background")
+        self.configure(background=self.bg)
+        sep = ttk.Separator(self, orient="horizontal")
+        sep.pack(side="top", fill="x", padx=4)
         grip = ttk.Sizegrip(self)
         grip.pack(side="right")
-        # this looks like crap on OSX - it's not the right background color :-(
-        self.canvas = self.CustomCanvas(self, borderwidth=0, highlightthickness=0)
+        # Why a canvas? I guess I'm trying to be clever and support
+        # text that fades away instead of blinking away. 
+        self.canvas = self.CustomCanvas(self, borderwidth=0, highlightthickness=0,
+                                        background=self.bg)
         self.canvas.pack(side="left", fill="both", expand=True, padx=(4,0))
         self.canvas.create_text((0,0), text="X")
         bbox = self.canvas.bbox("all")
@@ -35,8 +41,9 @@ class Statusbar(ttk.Frame):
         self.section[name] = tk.StringVar()
         if string is not None:
             self.section[name].set(string)
-        l = ttk.Label(self, textvariable=self.section[name], width=width)
-        s = ttk.Separator(self, orient="vertical")
+        l = tk.Label(self, textvariable=self.section[name], width=width, background=self.bg)
+#        s = ttk.Separator(self, orient="vertical")
+        s = tk.Frame(self, borderwidth=2, relief="groove", width=2)
         l.pack(side="right")
         s.pack(side="right", fill="y", padx=4, pady=4)
 
@@ -80,6 +87,10 @@ class Statusbar(ttk.Frame):
             self.move("all", deltax, 0)
             
     class Message(object):
+        '''A text string that fades away over time. 
+
+        Silly, but why not? A little eye candy never hurt.
+        '''
         def __init__(self, statusbar, string, lifespan=5000):
             self.statusbar = statusbar
             self.canvas = statusbar.canvas

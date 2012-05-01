@@ -5,8 +5,8 @@ import tkFont
 
 class RobotLogMessages(ttk.Frame):
     '''Provides a list of messages produced by a running test'''
-    def __init__(self, *args, **kwargs):
-        ttk.Frame.__init__(self, *args, **kwargs)
+    def __init__(self, parent):
+        ttk.Frame.__init__(self, name="log_messages")
 
         self._show_level = {
             "TRACE": tk.BooleanVar(self, value=False),
@@ -101,9 +101,9 @@ class RobotLogMessages(ttk.Frame):
     
 class RobotLogTree(tk.Frame):
     '''Provides a tree view for suite, test and keyword results'''
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent):
         self._init_images()
-        tk.Frame.__init__(self, *args, **kwargs)
+        tk.Frame.__init__(self, parent,name="log_tree")
         self.tree = ttk.Treeview(self, columns=("event_id", "timestamp"),
                                  displaycolumns=("timestamp",),
                                  height=200)
@@ -126,6 +126,7 @@ class RobotLogTree(tk.Frame):
         self._controller = None
         self._nodes = [""]
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
+        self.vsb = vsb
 
     def reset(self):
         '''Remove all items from the view'''
@@ -146,7 +147,16 @@ class RobotLogTree(tk.Frame):
             }
 
         if name in dispatch:
+            starting_yview = self.tree.yview()
             dispatch[name](event_id, *args)
+            self.update_idletasks()
+            # this autoscrolling is flakey and I don't know why. I 
+            # think there may be a timing issue with the treeview because
+            # this strategy of checking the yview has worked for me in
+            # the past with other widgets.
+            autoscroll = (starting_yview[1] >= 1.0)
+            if autoscroll:
+                self.tree.yview("moveto", "1.0")
 
     def _init_images(self):
         self._image = {

@@ -7,10 +7,11 @@ class RobotConsole(tk.Frame):
     '''This class presents a scrollable text widget to display stdout/stderr'''
     controller = None
 
-    def __init__(self, *args, **kwargs):
-        tk.Frame.__init__(self, *args, **kwargs)
+    def __init__(self, parent, background="white"):
+        tk.Frame.__init__(self, parent, name="log_console", borderwidth=1, relief="sunken")
         self.text = tk.Text(self, width=80, borderwidth=0, highlightthickness=0, 
-                            wrap="none", background=self.cget("background"))
+                            wrap="none", background=self.cget("background"),
+                            font="TkFixedFont")
         vsb = ttk.Scrollbar(self, command=self.text.yview, orient="vertical")
         hsb = ttk.Scrollbar(self, command=self.text.xview, orient="horizontal")
         self.text.configure(xscrollcommand=hsb.set,yscrollcommand=vsb.set)
@@ -22,6 +23,12 @@ class RobotConsole(tk.Frame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
         self._controller = None
+
+    def get_width(self):
+        '''Return the width in characters of the console window'''
+        # this is obviously incorrect, but close enough for now
+        width = self.text.winfo_width()
+        return width / 12
 
     def reset(self):
         '''Erases the data in the text widget'''

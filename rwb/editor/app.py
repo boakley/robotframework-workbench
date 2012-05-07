@@ -218,12 +218,18 @@ class EditorApp(AbstractRwbApp, EditorAPI):
                            tooltip="paste the contents of the clipboard",
                            command=lambda: self._send_event_to_focused_window("<<Paste>>"))
 
+        run = ToolButton(self.toolbar, imagedata=icons["control_play"],
+                         text="run",
+                         tooltip="Run the current test file",
+                         command=self._on_run)
+
         save.pack(side="left")
         ttk.Separator(self.toolbar, orient="vertical").pack(side="left", fill="y", pady=8, padx=4)
         cut.pack(side="left")
         copy.pack(side="left")
         paste.pack(side="left")
         ttk.Separator(self.toolbar, orient="vertical").pack(side="left", fill="y", pady=8, padx=4)
+        run.pack(side="left")
 
         self.searchentry  = SearchEntry(self, width=40)
         self.searchentry.pack(in_=self.toolbar, side="right", padx=(0,4))
@@ -593,11 +599,13 @@ class EditorApp(AbstractRwbApp, EditorAPI):
                                      message=message)
         else:
             self.save(page)
-            args = ["python","-m", "robot.runner"]
+#            args = ["python","-m", "robot.runner"]
+            args = []
             if extra_args is not None:
                 args = args + extra_args
             args.append(page.path)
-            self._runner.configure(args=args, cwd=os.getcwd())
+            working_dir = os.path.dirname(os.path.abspath(page.path))
+            self._runner.configure(args=args, cwd=working_dir)
             self._runner.start()
 
     def _on_dry_run(self, event=None):

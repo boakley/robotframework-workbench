@@ -7,6 +7,10 @@ class EditorAPI(object):
     def add_tool(self, tool_class):
         self._tools.append(tool_class(self))
 
+    def get_current_editor_page(self):
+        page = self.notebook.get_current_page()
+        return page
+
     def get_current_editor(self):
         page = self.notebook.get_current_page()
         if page is None:

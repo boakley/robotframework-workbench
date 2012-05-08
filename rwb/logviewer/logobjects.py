@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from rwb.lib.decorators import cached_property
+import urllib2
 
 class RobotLog(object):
     def __init__(self):
@@ -10,12 +11,20 @@ class RobotLog(object):
     def parse(self, path):
         self.path = path
         self.suites = []
-        xml = ET.parse(self.path)
+        try:
+            if "//" in path:
+                f = urllib2.urlopen(path)
+            else:
+                f = open(path)
+        except Exception, e:
+            raise Exception("unable to open requested path: %s" % str(e))
+
+        xml = ET.parse(f)
         root = xml.getroot()
         if root.tag != "robot":
-            raise Exception("expect root tag 'keywordspec', got '%s'" % root.tag)
-        self.statistics = RobotStatistics(root.find("statistics"))
+            raise Exception("expect root tag 'robot', got '%s'" % root.tag)
 
+        self.statistics = RobotStatistics(root.find("statistics"))
         for suite in root.findall("suite"):
             s = RobotSuite(suite)
             self.suites.append(s)

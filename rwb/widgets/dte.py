@@ -140,11 +140,12 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
             result = []
         return result
 
-    def compress_rows(self, anchor="insert"):
-        linenumber = self.index(anchor).split(".")[0]
-        rows = self.find_like_rows(linenumber)
-        self.tag_add("sel", "%s.0" % rows[0], "%s.0 lineend" % rows[-1])
+    def compress_columns(self, anchor="insert"):
+        '''Remove leading and trailing whitespace from each column in the selected range
 
+        This operates on whole rows, even if only a partial row is selected.
+        '''
+        linenumber = self.index(anchor).split(".")[0]
         rows = self.get_selected_rows()
         result = []
         for row in rows:
@@ -152,8 +153,8 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
             result.append(row)
         self.replace_selected_rows(result)
 
-    def align_rows(self, anchor="insert"):
-        self.select_similar_rows(anchor)
+    def align_columns(self, anchor="insert"):
+        '''Give each column in the selected range the same width'''
 
         rows = self.get_selected_rows()
         col_size = {}
@@ -163,7 +164,6 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         ncols = len(col_size)
         result = []
         for row in rows:
-            row = list(row) + [''] * (ncols - len(row))
             for i, col in enumerate(row):
                 row[i] = col.ljust(col_size[i])
             result.append(row)
@@ -181,6 +181,7 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         return "\n".join(lines)
 
     def replace_selected_rows(self, rows):
+        '''Replace the selected rows with the given data'''
         string = self.convert_to_string(rows)
         self.mark_set("sel_start", "sel.first linestart")
         self.mark_set("sel_end", "sel.last lineend")
@@ -193,7 +194,9 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         self.mark_unset("sel_start")
         
     def find_like_rows(self, linenumber):
-        '''Remarkably, this is pretty fast. About 1ms the last time I timed it
+        '''Find rows with the same number of columns
+
+        Remarkably, this is pretty fast. About 1ms the last time I timed it
 
         Admittedly, the algorithm is pretty clunky and could stand for some optimization
         '''

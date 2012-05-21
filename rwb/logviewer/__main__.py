@@ -15,9 +15,10 @@ limitations under the License.
 '''
 
 import app
+import rwb
 try:
-    app = app.LogViewerApp()
-    app.mainloop()
+    application = app.LogViewerApp()
+    application.mainloop()
 except KeyboardInterrupt:
     print "program quit at request of the user"
 

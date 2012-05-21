@@ -1,4 +1,8 @@
-import xml.etree.ElementTree as ET
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
+
 from rwb.lib.decorators import cached_property
 import urllib2
 
@@ -80,6 +84,10 @@ class RobotObject(object):
         self.xml_object = xml_object
         self.parent = parent
 
+    @property
+    def tostring(self):
+        return ET.tostring(self.xml_object)
+
     @cached_property 
     def name(self):
         return self.xml_object.get("name")
@@ -95,6 +103,19 @@ class RobotObject(object):
     @cached_property
     def status(self):
         return self._status.get("status")
+
+    @cached_property
+    def passed(self):
+        return self.status == "PASS"
+
+    @cached_property
+    def failed(self):
+        return self.status != "PASS"
+
+
+    @cached_property
+    def status_message(self):
+        return self._status.text
 
     @cached_property
     def starttime(self):
@@ -129,6 +150,10 @@ class RobotKeyword(RobotObject):
         return self.xml_object.get("type")
 
     @cached_property
+    def shortname(self):
+        return self.name.rsplit(".",1)[-1]
+
+    @cached_property
     def args(self):
         args = []
         arguments = self.xml_object.find("arguments")
@@ -157,6 +182,12 @@ class RobotSuite(RobotObject):
     def suites(self):
         for suite in self.xml_object.findall("suite"):
             yield RobotSuite(suite, parent=self)
+
+    @property
+    def keywords(self):
+        '''Suite keywords, such as setup and teardown'''
+        for kw in self.xml_object.findall("kw"):
+            yield RobotKeyword(kw)
 
     @property
     def tests(self):

@@ -115,10 +115,15 @@ class EditorPage(tk.Frame):
         else:
             self.linenumbers.grid_remove()
 
+    def get_selected_rows(self):
+        return self.dte.get_selected_rows()
+
     def get_row(self, linenumber):
+        '''Return the row for the passed-in line number'''
         return self.dte.get_row(linenumber)
 
     def get_text(self):
+        '''Return all the text in the editor page'''
         return self.dte.get(1.0, "end-1c")
 
     def set_path(self, path):
@@ -210,6 +215,7 @@ class EditorPage(tk.Frame):
 #        self.dte.bind("<Configure>", lambda event: self.draw_line_numbers())
         self.dte.bind("<<AutoComplete>>", self.on_autocomplete)
         self.dte.bind("<*>", self.on_star)
+        self.dte.bind("<$>", self._on_dollar)
 
         self.popup_menu = tk.Menu(self.dte, tearoff=False)
         self.popup_menu.add_command(label="Cut", underline=2, 
@@ -314,6 +320,14 @@ class EditorPage(tk.Frame):
     def on_popup(self, event=None):
         self.popup_menu.tk_popup(event.x_root, event.y_root)
 
+    def _on_dollar(self, event):
+        '''If there is a selection, surround it with ${}'''
+        sel = self.dte.tag_ranges("sel")
+        if len(sel) > 0:
+            self.dte.insert(sel[1], "}")
+            self.dte.insert(sel[0], "${")
+            return "break"
+
     def on_star(self, event):
         '''If the user types '*' on an otherwise blank line, insert '*** ***' 
         then place cursor in the middle
@@ -379,14 +393,14 @@ class EditorPage(tk.Frame):
         file with 2k lines. Nice.
         '''
         
-        if table not in ("settings","test cases", "keywords", "variables"):
+        if table.lower() not in ("settings","test cases", "keywords", "variables"):
             raise Exception("invalid table '%s': " % table +
                             "must be one of 'settings', " + 
                             "'test cases', 'keywords' or 'variables'")
         any_heading_pattern=r'^ *\*+[\* ]*(Test Cases?|(User )?Keywords?|Settings?|Variables?)[\* ]*$'
         # N.B. this pattern assumes 'table' is plural (note how
         # a '?' is appended immediately after the table name)
-        heading_pattern = r'^ *\*+ *%s?[ \*]*$' % table
+        heading_pattern = r'^ *\*+ *%s?[ \*]*$' % table.lower()
         result = []
         end = "1.0"
         while True:

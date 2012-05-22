@@ -535,8 +535,8 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         table_menu = tk.Menu(self.menubar, tearoff=False)
         table_menu.add_command(label="Select similar rows", command=self._on_select_similar_rows)
         table_menu.add_separator()
-        table_menu.add_command(label="Align Cells", command=self._on_align_rows)
-        table_menu.add_command(label="Compress Cells", command=self._on_compress_rows)
+        table_menu.add_command(label="Align Columns", command=self._on_align_columns)
+        table_menu.add_command(label="Compress Columns", command=self._on_compress_columns)
 
         self.menubar.add_cascade(label="Table", menu=table_menu)
 
@@ -628,13 +628,13 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         current_editor = self.get_current_editor()
         current_editor.select_similar_rows()
         
-    def _on_align_rows(self):
+    def _on_align_columns(self):
         current_editor = self.get_current_editor()
-        current_editor.align_rows()
+        current_editor.align_columns()
 
-    def _on_compress_rows(self):
+    def _on_compress_columns(self):
         current_editor = self.get_current_editor()
-        current_editor.compress_rows()
+        current_editor.compress_columns()
         
     def _on_post_tools_menu(self):
         current_editor = self.get_current_editor()

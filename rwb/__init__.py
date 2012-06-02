@@ -16,13 +16,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-import editor
-import kwbrowser
-import runner
-import widgets
-import images
+from runner.socket_listener import socket_listener
+
 
 # these will be set by the app after Tkinter is initialized
 FONT_SCHEME = None

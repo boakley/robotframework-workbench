@@ -39,8 +39,11 @@ class RemoteRobotListener(tk.Frame):
         # is a proxy for our python method named "callback_proxy"
         parent.createcommand("socket_callback", self.callback_proxy)
 
+        print "port passed in:", port
         # This runs some Tcl code to establish a socket server. 
         # the code returns the port that the server is running on.
+        # Sorry, but Tcl's socket handling with fileevents is 
+        # superior to anything python has 
         self.port = parent.eval('''
             proc Server {channel addr port} {
                 fileevent $channel readable [list readline $channel]
@@ -53,9 +56,9 @@ class RemoteRobotListener(tk.Frame):
                     socket_callback $line
                 }
             }
-            set ::the_socket [socket -server Server 0]
+            set ::the_socket [socket -server Server %s]
             set port [lindex [fconfigure $::the_socket -sockname] end]
-        ''')
+        ''' % port)
 
     def callback_proxy(self, data):
         '''Deserialize the data and pass it to the callback

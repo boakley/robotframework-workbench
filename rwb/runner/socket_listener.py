@@ -13,7 +13,7 @@ HOST = "localhost"
 
 # Robot expects the class to be the same as the filename, so
 # we can't use the convention of capitalizing the class name
-class socket_listener:
+class socket_listener(object):
     """Pass all listener events to a remote listener
 
     If called with one argument, that argument is a port

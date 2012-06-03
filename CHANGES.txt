@@ -1,2 +1,4 @@
+v0.2.0, June 03, 2012 -- added rwb.monitor
 v0.1.0, March 29, 2012 -- Initial release. 
+
 

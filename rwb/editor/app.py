@@ -9,6 +9,7 @@ import imp
 import urllib2
 import platform
 import subprocess
+from rwb.widgets import CollapsibleFrame
 from rwb.runner import RobotController
 from rwb.lib import AbstractRwbApp
 from rwb.widgets import Statusbar
@@ -74,6 +75,7 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         self._create_menubar()
         self._create_toolbar()
         self._create_statusbar()
+        self._create_command_window()
         self._create_editor()
         self._create_shelf()
 
@@ -189,6 +191,10 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         '''Return the widget that should be the target of the search box'''
         return self.notebook.get_current_page().get_text_widget()
 
+    def _create_command_window(self):
+        self.command_window = CollapsibleFrame(self, title="robot command line")
+        self.command_window.pack(side="top", fill="x")
+
     def _create_toolbar(self):
         self.toolbar = ttk.Frame(self)
         self.toolbar.pack(side="top", fill="x")
@@ -288,7 +294,7 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         self.bind("<<ZoomOut>>", self._on_zoom_out)
         self.bind("<<Find>>", self._on_find)
         self.bind("<<FindNext>>", self._on_find_next)
-
+        self.bind("<<ToggleCommandWindow>>", self.command_window.toggle)
         # WTF? through trial and error I discovered that 
         # the "Text" widget class has a binding for button-2
         # which calls a ttk function. Srsly, WTF?
@@ -352,7 +358,10 @@ class EditorApp(AbstractRwbApp, EditorAPI):
         errors = []
         for path in args:
             try:
-                self._load_file(path)
+                if os.path.isdir(path):
+                    self._load_dir(path)
+                else:
+                    self._load_file(path)
             except Exception, e:
                 errors.append((path, e))
         if len(errors) == 1:
@@ -366,6 +375,15 @@ class EditorApp(AbstractRwbApp, EditorAPI):
                 message += "%s\n%s\n\n" % (path, e)
             tkMessageBox.showwarning("Error opening file",message)
         
+    def _load_dir(self, dirname):
+        import os
+        for root, dirs, files in os.walk(dirname):
+            for filename in files:
+                if filename.endswith(".txt"):
+                    self._load_file(os.path.join(root, filename))
+            for dirname in dirs:
+                self._load_dir(os.path.join(root, dirname))
+            
     def _load_file(self, filename):
         '''Load a file. If the filename is already loaded, select that tab'''
 

@@ -49,6 +49,7 @@ class EditorPage(tk.Frame):
         self.app = app
         self.path = path
         self.name = name
+        self._loaded = False
         if name is None and path is not None:
             self.name = os.path.basename(path)
 
@@ -69,8 +70,15 @@ class EditorPage(tk.Frame):
         # immediately update the line numbers
         self._last_winfo_height = self.winfo_height()
 
-        if path is not None and os.path.exists(path):
-            self.load(path)
+        # This arranges for the file to be loaded the first time
+        # the widget becomes visible. No point in doing it any
+        # sooner. This potentially greatly speeds up startup
+        # time when opening a lot of files.
+        self.bind("<Visibility>", self._on_visibility)
+
+    def _on_visibility(self, event):
+        if not self._loaded:
+            self.after(1, self.after_idle, self.load, self.path)
 
     def _on_linenumber_control_click(self, event):
         text_index = self.dte.index("@%s,%s" % (event.x, event.y))
@@ -372,6 +380,7 @@ class EditorPage(tk.Frame):
         self.dte.edit_reset()
         self.dte.mark_set("insert", 1.0)
         self._checksum = self._compute_checksum()
+        self._loaded = True
 
     def get_test_cases(self):
         regions = self.get_table_regions("test cases")

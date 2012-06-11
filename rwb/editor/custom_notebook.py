@@ -47,6 +47,9 @@ class CustomNotebook(tk.Frame):
         self.left.grid_rowconfigure(0, weight=1)
         self.left.grid_columnconfigure(1, weight=1)
         self.list.bind("<<ListboxSelect>>", self.on_list_selection)
+        # start with them invisible; they will reappear when needed
+        vsb.grid_remove()
+        hsb.grid_remove()
 
     def get_current_page(self):
         return self.current_page

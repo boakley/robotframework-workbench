@@ -7,31 +7,31 @@ it did when I wrote this comment.
 
 import ttk
 import Tkinter as tk
+import re
 #import core.colors
 
 class ListItem(object):
     def __init__(self, name, object):
+        self.item_id = None
         self.name = name
         self.object=object
+
+        # the sort key is the name split into strings and integers.
+        # the reason? So that a file like "foo10" appears after "foo2"
+        # in sort order 
+        self.sort_key = [self._int_or_string(span) for span in re.split('([0-9]+)', name)]
+
+    def _int_or_string(self, text):
+        '''Return int if text is all digits, otherwise return a string'''
+        return int(text) if text.isdigit() else text
 
 class TabList(ttk.Frame):
     def __init__(self, *args, **kwargs):
         ttk.Frame.__init__(self, *args, **kwargs)
-        heading = tk.Label(self, text="Opened files", anchor="w")
-#                            background=core.colors.background2, 
-#                            foreground=core.colors.foreground2)
-        self._listbox = tk.Listbox(self, borderwidth=0, 
-                                   highlightthickness=0, activestyle="none",
-                                   exportselection=False,
-#                                   foreground=core.colors.foreground1,
-#                                   selectbackground=core.colors.accent,
-                                   selectmode="browse",
-                                   width=32)
-
-        heading.pack(side="top", fill="x", expand=False)
+        self._listbox = ttk.Treeview(self)
         self._listbox.pack(side="top", fill="both", expand=True, padx=(0,0))
-        self._listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
-        self._list_items = []
+        self._listbox.bind("<<TreeviewSelect>>", self._on_listbox_select)
+        self._list_items = {}
         self._map = {}
 
         self.xview = self._listbox.xview
@@ -41,21 +41,25 @@ class TabList(ttk.Frame):
     def get(self):
         '''Get the object of the currently selected item'''
 
-        selection = self._listbox.curselection()
+        selection = self._listbox.selection()
         if selection is not None and len(selection) > 0:
-            index = int(selection[0])
-            item = self._list_items[index]
-            return (item.name, item.object)
+            item_id = selection[0]
+            item = self._list_items[item_id]
+            return item.name, item.object
         return (None, None)
 
     def add(self, text, object):
         '''Add an object to the list'''
         list_item = ListItem(text, object)
-        self._list_items.append(list_item)
-        self._list_items = sorted(self._list_items, key=lambda x: x.name)
-        index = self._list_items.index(list_item)
-        self._listbox.insert(index, " - " + text)
-        self._select(index)
+        list_item.item_id = self._listbox.insert("", "end", text=text)
+        self._list_items[list_item.item_id] = list_item
+        self._sort_list()
+        self._select(list_item.item_id)
+
+    def _sort_list(self):
+        sorted_items = sorted(self._list_items.values(), key=lambda item: item.sort_key)
+        for index, item in enumerate(sorted_items):
+            self._listbox.move(item.item_id, '', index)
 
     def rename(self, object):
         i = self._get_object_index(object)
@@ -66,6 +70,7 @@ class TabList(ttk.Frame):
 
     def remove(self, object):
         '''Remove an object from the list'''
+        print "remove:", object
         index = self._get_object_index(object)
         if index is not None:
             self._list_items.pop(index)
@@ -107,17 +112,6 @@ class TabList(ttk.Frame):
         return None
 
     def _select(self, index):
-        self._listbox.selection_clear(0, "end")
-        self._listbox.selection_anchor(index)
+        for item in self._listbox.selection():
+            self._listbox.selection_remove(item)
         self._listbox.selection_set(index)
-        self.event_generate("<<ListboxSelect>>")
-
-t=None
-def demo():
-    global t
-    root = tk.Tk()
-    t = TabList(root)
-    t.pack(side="top", fill="y")
-    t.add("Label C", "label C")
-    t.add("Label A", "label A")
-    t.add("Label B", "label B")

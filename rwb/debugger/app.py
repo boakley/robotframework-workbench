@@ -8,6 +8,7 @@ import Tkinter as tk
 from rwb.runner.log import RobotLogTree, RobotLogMessages
 from rwb.lib import AbstractRwbApp
 from rwb.widgets import Statusbar
+from varlist import VariableList
 import xmlrpclib
 
 from rwb.runner.listener import RemoteRobotListener
@@ -50,24 +51,45 @@ class DebuggerApp(AbstractRwbApp):
         self.toolbar = ttk.Frame(self)
         self.toolbar.pack(side="top", fill="x")
         self.continue_button = ttk.Button(self.toolbar,text="continue", command=self._on_continue)
-        self.continue_button.pack(side="left")
         self.continue_button.configure(state="disabled")
+        self.stop_button = ttk.Button(self.toolbar, text="stop", command=self._on_stop)
+        self.fail_button = ttk.Button(self.toolbar, text="fail test", command=self._on_fail_test)
+
+        self.continue_button.pack(side="left")
+        self.stop_button.pack(side="left")
+        self.fail_button.pack(side="left")
 
     def refresh_vars(self):
         proxy = xmlrpclib.ServerProxy("http://localhost:8911",allow_none=True)
-        variables = proxy.get_variables()
-        for (key, value) in variables.iteritems():
-            # for reasons I don't yet understand, backslashes are getting interpreted
-            # as escape sequences. WTF?
-            try:
-                value = value.replace("\\", "\\\\")
-            except: 
-                pass
-            self.varlist.insert("", "end", text=key, values=(value,))
+        try:
+            variables = proxy.get_variables()
+            for key in sorted(variables.keys(), key=str.lower):
+                # for reasons I don't yet understand, backslashes are getting interpreted
+                # as escape sequences. WTF?
+                try:
+                    value = variables[key]
+                    value = value.replace("\\", "\\\\")
+                except: 
+                    pass
+                self.varlist.add(key, value)
+        except Exception, e:
+            print "refresh_vars failed:", e
+
+    def _on_fail_test(self):
+        proxy = xmlrpclib.ServerProxy("http://localhost:8911",allow_none=True)
+        try:
+            proxy.fail_test("failed on request of debugger")
+        except Exception, e:
+            print "on_fail_test caught an exception:", e
+        print "done?"
+        
+    def _on_stop(self):
+        proxy = xmlrpclib.ServerProxy("http://localhost:8911",allow_none=True)
+        proxy.stop("bang. you're dead.")
 
     def _on_continue(self):
         proxy = xmlrpclib.ServerProxy("http://localhost:8911",allow_none=True)
-        proxy.continue_()
+        proxy.resume()
         
     def _create_menubar(self):
         self.menubar = tk.Menu(self)
@@ -89,17 +111,27 @@ class DebuggerApp(AbstractRwbApp):
         # self.statusbar.pack(side="bottom", fill="x")
 
     def _create_main(self):
-        pw = ttk.PanedWindow(self, orient="vertical")
-        pw.pack(side="right", fill="both", expand=True)
+        # one horizontal paned window to hold a tree of suites, tests and keywords
+        # on the left, and the rest of the windows on the right.
+        hpw = tk.PanedWindow(self, orient="horizontal",
+                             borderwidth=0,
+                             sashwidth=4, sashpad=0)
+        hpw.pack(side="top", fill="both", expand=True)
+        vpw = tk.PanedWindow(self, orient="vertical",
+                              borderwidth=0,
+                              sashwidth=4, sashpad=0)
 
-        self.varlist = ttk.Treeview(pw, columns=("value",))
-        self.input = tk.Text(pw, wrap="word", height=4)
-        self.log_tree = RobotLogTree(self, auto_open=("failed","suite","test","keyword"))
-        self.log_messages = RobotLogMessages(pw)
-        pw.add(self.varlist, weight=1)
-        pw.add(self.log_messages, weight=1)
-        pw.add(self.input, weight=0)
-        self.log_tree.pack(side="left", fill="y")
+        self.log_tree = RobotLogTree(hpw, auto_open=("failed","suite","test","keyword"))
+        self.varlist = VariableList(vpw)
+        self.input = tk.Text(vpw, wrap="word", height=4)
+        self.log_messages = RobotLogMessages(vpw)
+
+        hpw.add(self.log_tree)
+        hpw.add(vpw)
+        vpw.add(self.varlist, height=150)
+        vpw.add(self.log_messages, height=150)
+        vpw.add(self.input, height=100)
+#        self.log_tree.pack(side="left", fill="y")
         self.listeners = (self.log_tree, self.log_messages)
 
     def reset(self):

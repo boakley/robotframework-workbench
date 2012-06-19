@@ -32,6 +32,18 @@ class Statusbar(tk.Frame):
         self.messages = []
         self.section = {}
 
+    def add_progress(self, mode="indeterminate"):
+        self.progress_bar = ttk.Progressbar(self, mode=mode)
+        self.progress_bar.pack(side="right")
+        separator = tk.Frame(self, borderwidth=2, relief="groove", width=2)
+        separator.pack(side="right", fill="y", padx=4, pady=4)
+
+    def progress_start(self):
+        self.progress_bar.start()
+
+    def progress_stop(self):
+        self.progress_bar.stop()
+
     def add_section(self, name, width, string=None):
         '''Define a new section in the statusbar
         
@@ -64,27 +76,30 @@ class Statusbar(tk.Frame):
         deltax = abs(bbox[0] - 4)
         self.canvas.move("all", deltax, 0)
         
-    def message(self, string, lifespan=5000):
+    def message(self, string, lifespan=5000, clear=False):
         '''Display a message in the statusbar
 
         This message will fade out after the given lifespan. If there
         is already a message being displayed it will be moved to the
         right to make room for the new message.
         '''
+        if clear:
+            self.canvas.delete("all")
         # if there's already an existing message, we want to add
         # a separator to it. First, let's prune any old messages
         # from our stack
         self.messages = [m for m in self.messages if m.canvas_id is not None]
         if len(self.messages) > 0:
             self.messages[0].add_separator()
-        self.messages.insert(0,self.Message(self, string, lifespan=5000))
+        self.messages.insert(0,self.Message(self, string, lifespan=lifespan))
 
     class CustomCanvas(tk.Canvas):
         def fit(self):
             '''Makes sure nothing overlaps the left edge'''
             bbox = self.bbox("all")
-            deltax = abs(bbox[0] - 4)
-            self.move("all", deltax, 0)
+            if bbox is not None and len(bbox) > 0:
+                deltax = abs(bbox[0] - 4)
+                self.move("all", deltax, 0)
             
     class Message(object):
         '''A text string that fades away over time. 
@@ -99,7 +114,8 @@ class Statusbar(tk.Frame):
                                                 fill=COLORS[self.color_index])
             self._has_separator = False
             self.canvas.fit()
-            self.canvas.after(lifespan, self.decay)
+            if lifespan > 0:
+                self.canvas.after(lifespan, self.decay)
 
         def add_separator(self):
             '''Add a separator to the left of the text string'''

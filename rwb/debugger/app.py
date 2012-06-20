@@ -24,7 +24,7 @@ DEFAULT_SETTINGS = {
 class DebuggerApp(AbstractRwbApp):
     def __init__(self):
         AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
-        self.wm_geometry("900x500")
+        self.wm_geometry("1200x600")
         port = self.get_setting("debugger.port")
         self.listener = RemoteRobotListener(self, port=port, callback=self._listen)
         self.wm_title("rwb." + NAME)
@@ -60,6 +60,7 @@ class DebuggerApp(AbstractRwbApp):
         self.fail_button.pack(side="left")
 
     def refresh_vars(self):
+        self.varlist.reset()
         proxy = xmlrpclib.ServerProxy("http://localhost:8911",allow_none=True)
         try:
             variables = proxy.get_variables()
@@ -131,11 +132,13 @@ class DebuggerApp(AbstractRwbApp):
         vpw.add(self.varlist, height=150)
         vpw.add(self.log_messages, height=150)
         vpw.add(self.input, height=100)
-#        self.log_tree.pack(side="left", fill="y")
         self.listeners = (self.log_tree, self.log_messages)
 
     def reset(self):
-        print "reset..."
+        '''Reset all of the windows to their initial state'''
+        self.log_tree.reset()
+        self.log_messages.reset()
+        self.varlist.reset()
 
     def _listen(self, cmd, *args):
         self.event_id += 1
@@ -149,8 +152,8 @@ class DebuggerApp(AbstractRwbApp):
         if True and cmd == "log_message":
             attrs = args[0]
             if attrs["level"] == "DEBUG":
-                if attrs["message"] == ":break:":
-                    # this is a signal from the 'breakpoint' keyword
+                # this is a signal from the 'breakpoint' keyword
+                if attrs["message"].strip().startswith(":break:"):
                     self.continue_button.configure(state="normal")
                     self.refresh_vars()
 
@@ -159,12 +162,14 @@ class DebuggerApp(AbstractRwbApp):
             cmd_type = cmd.split("_")[1]
             self.stack.append((cmd_type, name))
             self.update_display()
+
         elif cmd in ("end_test", "end_suite", "end_keyword"):
             cmd_type = cmd.split("_")[1]
             self.stack.pop()
             self.update_display()
 
     def update_display(self):
+        '''Refresh all of the status information in the GUI'''
         if len(self.stack) == 1:
             self.statusbar.progress_start()
         elif len(self.stack) == 0:

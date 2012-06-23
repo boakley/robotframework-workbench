@@ -1,5 +1,9 @@
 ''' SearchEntry - entry widget with search icon and rounded ends
 
+This isn't just the entry widget, but also logic for traversing the list
+of matches. This assumes that the target widget is a text widget. If
+you want to search some other widget you'll have to give it an interface
+similar to a text widget (eg: tag_nextrange, mark_set, etc)
 '''
 
 import Tkinter as tk
@@ -18,8 +22,7 @@ class SearchBox(ttk.Entry):
 
         # argh! ttk style layout remain a big mystery to me. Even though
         # the style layout includes the "Search.cancel" element, it's not
-        # showing up. Why? I have no idea. So, we'll go old school
-        # get this image to show up using the layout, so we'll go
+        # showing up. Why? I have no idea. So, we'll go old school 
         # and place a label there. *sigh*. 
         self.cancel_label = tk.Label(self, image=self.cancel_image, background="white", 
                                      borderwidth=0, highlightthickness=0,
@@ -30,7 +33,6 @@ class SearchBox(ttk.Entry):
 
     def _on_cancel(self, event):
         self.delete(0, "end")
-#        self._stringvar.set("")
         self.cancel()
         return "break"
 
@@ -38,6 +40,10 @@ class SearchBox(ttk.Entry):
         # do nothing; subclasses can override, obviously
         pass
 
+    def focus(self):
+        ttk.Entry.focus(self)
+        self.selection_range(0,"end")
+        
     def _initialize_style(self):
         self.normal_image = tk.PhotoImage(data=image_data, format="gif -index 0")
         self.focus_image = tk.PhotoImage(data=image_data, format="gif -index 1")
@@ -84,9 +90,11 @@ class SearchEntry(SearchBox):
         return "break"
 
     def cancel(self):
-        '''Remove all highlighting and reset search string'''
+        '''Remove all highlighting, reset search string, and set focus to target window'''
         self.reset()
         target = self.parent.get_search_target()
+        target.focus()
+
         
     def next(self):
         '''Select the next match and move the cursor to it'''

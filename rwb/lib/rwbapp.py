@@ -27,21 +27,21 @@ from rwb.lib.fonts import FontScheme
 from rwb.widgets import SettingsDialog
 
 class AbstractRwbApp(tk.Tk):
-    def __init__(self, name, default_settings):
+    class DefaultArgs(object): pass
+    def __init__(self, name, default_settings, args=DefaultArgs()):
+        self._initialize_logging(name)
         tk.Tk.__init__(self)
-        # toplevel widgets aren't "themed". This frame acts
+        # toplevel widgets don't use the ttk themes. This frame acts
         # as a themed background for the app as a whole.
         background=ttk.Frame(self)
         background.place(x=0, y=0, relwidth=1, relheight=1)
 
+        self.args = args
         self.name = name
         self.settings_dialog = None
         self._save_settings_job = None
-        self._initialize_logging(name)
         self._initialize_settings(name, default_settings)
         self._initialize_themes()
-
-        self.log.debug("logging has been initiated")
 
         s = ttk.Style()
         s.configure("Toolbutton", anchor="c")
@@ -59,14 +59,18 @@ class AbstractRwbApp(tk.Tk):
         self.fonts = FontScheme()
 
     def _initialize_logging(self, name):
-        formatter = logging.Formatter("%(levelname)s: %(module)s.%(funcName)s: %(message)s")
+        
+        formatter = logging.Formatter("%(levelname)-7s %(module)s.%(funcName)s: %(message)s")
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(formatter)
 
         root_logger = logging.getLogger()
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(handler)
-        self.log = logging.getLogger(name)
+        root_logger.setLevel(os.getenv("RWB_LOG_LEVEL", logging.WARN))
+        self.log = logging.getLogger(type(self).__name__)
+        self.log.setLevel(os.getenv("RWB_LOG_LEVEL", logging.WARN))
+        self.log.addHandler(handler)
+        self.log.propagate = False
+        
 
     def show_settings_dialog(self):
         if self.settings_dialog is None:
@@ -141,11 +145,13 @@ class AbstractRwbApp(tk.Tk):
             self.log.debug("reading config file '%s'" % self.settings_path)
             try:
                 user_settings = ConfigObj(self.settings_path)
-                self.settings[name].merge(user_settings[name])
+                if name in user_settings:
+                    self.settings[name].merge(user_settings[name])
             except Exception, e:
                 # need to report this somewhere useful, and 
                 # make sure it has some useful information
-                self.log.warning("error opening config file: %s" % str(e))
+                self.log.debug("error reading config file: %s", e)
+            self.log.debug("Settings: %s", self.settings)
         else:
             self.log.debug("no settings file found.")
 

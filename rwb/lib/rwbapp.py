@@ -46,7 +46,10 @@ class AbstractRwbApp(tk.Tk):
         s = ttk.Style()
         s.configure("Toolbutton", anchor="c")
 
+        self.wm_protocol("WM_DELETE_WINDOW", self._on_exit)
         self._settings_frames = []
+
+        self._restore_geometry()
 
     def register(self, class_):
         if AbstractSettingsFrame in class_.__bases__:
@@ -71,6 +74,18 @@ class AbstractRwbApp(tk.Tk):
         self.log.addHandler(handler)
         self.log.propagate = False
         
+    def _on_exit(self, *args):
+        try:
+            geometry = self.wm_geometry()
+            self.set_setting("%s.geometry" % self.name, self.wm_geometry())
+            try:
+                self.save_settings(now=True)
+            except Exception, e:
+                self.log.debug("error saving settings: %s", str(e))
+        except Exception, e:
+            self.log.debug("error in on_exit handler:", str(e))
+            sys.exit(1)
+        sys.exit(0)
 
     def show_settings_dialog(self):
         if self.settings_dialog is None:
@@ -83,7 +98,7 @@ class AbstractRwbApp(tk.Tk):
     def get_setting(self, key, default=None):
         '''Return a setting for the given key
 
-        A key is expressed in dot notation (eg: editor.foo.bar)
+        A key is expressed in dot notation (eg: editor.geometry)
         The first part of the key should be the app name
         ( eg: editor, runner, kwbrowser)
         '''
@@ -95,6 +110,7 @@ class AbstractRwbApp(tk.Tk):
         return result
 
     def set_setting(self, key, value):
+        '''Set a setting. 'key' is in dot notation (eg: editor.geometry)'''
         section = self.settings
         keys = key.split(".")
         for key in key.split(".")[:-1]:
@@ -155,3 +171,10 @@ class AbstractRwbApp(tk.Tk):
         else:
             self.log.debug("no settings file found.")
 
+    def _restore_geometry(self):
+        geometry = self.get_setting("%s.geometry" % self.name)
+        if geometry is not None and geometry != "":
+            try:
+                self.wm_geometry(geometry)
+            except Exception, e:
+                self.log.debug("error restoring geometry: %s", str(e))

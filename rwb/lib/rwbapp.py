@@ -27,31 +27,32 @@ from rwb.lib.fonts import FontScheme
 from rwb.widgets import SettingsDialog
 
 class AbstractRwbApp(tk.Tk):
+    '''Base class for all workbench GUI applications'''
     class DefaultArgs(object): pass
     def __init__(self, name, default_settings, args=DefaultArgs()):
         self._initialize_logging(name)
         tk.Tk.__init__(self)
-        # toplevel widgets don't use the ttk themes. This frame acts
-        # as a themed background for the app as a whole.
-        background=ttk.Frame(self)
-        background.place(x=0, y=0, relwidth=1, relheight=1)
-
         self.args = args
         self.name = name
         self.settings_dialog = None
         self._save_settings_job = None
         self._initialize_settings(name, default_settings)
+        self._restore_geometry()
         self._initialize_themes()
-
-        s = ttk.Style()
-        s.configure("Toolbutton", anchor="c")
-
-        self.wm_protocol("WM_DELETE_WINDOW", self._on_exit)
         self._settings_frames = []
 
-        self._restore_geometry()
+        # The "rwbapp" bindtag exists so that we can do some
+        # teardown when this window closes. This is marginally
+        # easier than binding to "."
+        self.bindtags(self.bindtags() + ("rwbapp",))
+        self.bind_class("rwbapp", "<Destroy>", self.on_exit)
 
     def register(self, class_):
+        '''Register a class with the application
+
+        Right now the only type of class that can be registered is
+        a sublcass of AbstractSettingsFrame
+        '''
         if AbstractSettingsFrame in class_.__bases__:
             self._settings_frames.append(class_)
         else:
@@ -60,6 +61,12 @@ class AbstractRwbApp(tk.Tk):
     def _initialize_themes(self):
         self.colors = ColorScheme()
         self.fonts = FontScheme()
+        s = ttk.Style()
+        s.configure("Toolbutton", anchor="c")
+        # toplevel widgets don't use the ttk themes. This frame acts
+        # as a themed background for the app as a whole.
+        background=ttk.Frame(self)
+        background.place(x=0, y=0, relwidth=1, relheight=1)
 
     def _initialize_logging(self, name):
         
@@ -74,7 +81,7 @@ class AbstractRwbApp(tk.Tk):
         self.log.addHandler(handler)
         self.log.propagate = False
         
-    def _on_exit(self, *args):
+    def on_exit(self, *args):
         try:
             geometry = self.wm_geometry()
             self.set_setting("%s.geometry" % self.name, self.wm_geometry())
@@ -84,8 +91,6 @@ class AbstractRwbApp(tk.Tk):
                 self.log.debug("error saving settings: %s", str(e))
         except Exception, e:
             self.log.debug("error in on_exit handler:", str(e))
-            sys.exit(1)
-        sys.exit(0)
 
     def show_settings_dialog(self):
         if self.settings_dialog is None:
@@ -161,8 +166,7 @@ class AbstractRwbApp(tk.Tk):
             self.log.debug("reading config file '%s'" % self.settings_path)
             try:
                 user_settings = ConfigObj(self.settings_path)
-                if name in user_settings:
-                    self.settings[name].merge(user_settings[name])
+                self.settings.merge(user_settings)
             except Exception, e:
                 # need to report this somewhere useful, and 
                 # make sure it has some useful information

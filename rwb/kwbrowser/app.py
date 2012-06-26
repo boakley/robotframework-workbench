@@ -18,6 +18,7 @@ DEFAULT_SETTINGS={
     NAME: {
         "hide_private": True,
         "search_both": True,
+        "geometry": "800x600",
         }
 }
 
@@ -25,7 +26,6 @@ class KwBrowserApp(AbstractRwbApp):
     '''A Tkinter application that wraps the browser frame'''
     def __init__(self, *args, **kwargs):
         AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
-        self.wm_geometry("800x600")
         self.working_set = sys.argv[1:]
 
         self.wm_title("Keyword Browser - Robot Framework Workbench")

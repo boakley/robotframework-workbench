@@ -5,7 +5,8 @@ then just started hacking away.
 
 import ttk
 import Tkinter as tk
-from rwb.runner.log import RobotLogTree, RobotLogMessages
+from rwb.runner import RobotLogTree, RobotLogMessages
+from rwb.runner import RobotFailureList
 from rwb.lib import AbstractRwbApp
 from rwb.widgets import Statusbar
 from varlist import VariableList
@@ -18,14 +19,14 @@ DEFAULT_SETTINGS = {
     NAME: {
         "port": 8910,
         "host": "localhost",
+        "geometry": "1200x600",
         }
     }
 
 class DebuggerApp(AbstractRwbApp):
     def __init__(self):
         AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
-        self.wm_geometry("1200x600")
-        port = self.get_setting("debugger.port")
+        port = int(self.get_setting("debugger.port"))
         self.listener = RemoteRobotListener(self, port=port, callback=self._listen)
         self.wm_title("rwb." + NAME)
         self._create_menubar()
@@ -34,9 +35,11 @@ class DebuggerApp(AbstractRwbApp):
         self._create_main()
         self.stack = []
         self.event_id = 0
-        self.wm_protocol("WM_DELETE_WINDOW", self._on_exit)
 
-    def _on_exit(self, *args):
+    def on_exit(self, *args):
+        # it can take a second or so for the app to fully exit,
+        # so we'll withdraw the window so it appears to die quickly.
+        self.wm_withdraw()
         try:
             # in case the remote robot instance is waiting for us,
             # let's send a continue command
@@ -45,6 +48,7 @@ class DebuggerApp(AbstractRwbApp):
         except Exception, e:
             # I probably should log something...
             pass
+        AbstractRwbApp.on_exit(self, *args)
         self.destroy()
         
     def _create_toolbar(self):
@@ -96,7 +100,7 @@ class DebuggerApp(AbstractRwbApp):
         self.menubar = tk.Menu(self)
         self.configure(menu=self.menubar)
         self.file_menu = tk.Menu(self.menubar, tearoff=False)
-        self.file_menu.add_command(label="Exit", command=self._on_exit)
+        self.file_menu.add_command(label="Exit", command=self.on_exit)
         self.menubar.add_cascade(menu=self.file_menu, label="File", underline=0)
 
 

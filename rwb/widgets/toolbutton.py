@@ -7,7 +7,7 @@ class ToolButton(ttk.Button):
     This has the behavior of looking flat until you hover over it. It
     also supports tooltips.
     '''
-    def __init__(self, parent, imagedata=None, tooltip="the tooltip", text=None,command=None, width=5):
+    def __init__(self, parent, imagedata=None, tooltip="the tooltip", text=None,command=None, width=5, compound="top"):
         if imagedata is None:
             self._normal_image = None
         else:
@@ -20,7 +20,7 @@ class ToolButton(ttk.Button):
                             command=command, takefocus=False)
         if text is not None:
             # FIXME: this is the wrong place to set the width...
-            self.configure(text=text, compound="top", width=width)
+            self.configure(text=text, compound=compound, width=width)
         self.bind("<Enter>", self._on_show_tip)
         self.bind("<Leave>", self._on_hide_tip)
         self.tip = tk.Toplevel(self, borderwidth=1, relief="solid")

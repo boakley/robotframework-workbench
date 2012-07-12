@@ -24,3 +24,5 @@ from textfinder import TextFinder
 from dte import DynamicTableEditor
 from toolbutton import ToolButton
 from tabnotebook import BottomTabNotebook
+from collapsible_frame import CollapsibleFrame
+from tree_tooltip import TreeviewTooltip

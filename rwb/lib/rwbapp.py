@@ -75,9 +75,15 @@ class AbstractRwbApp(tk.Tk):
         handler.setFormatter(formatter)
 
         root_logger = logging.getLogger()
-        root_logger.setLevel(os.getenv("RWB_LOG_LEVEL", logging.WARN))
+        log_level = os.getenv("RWB_LOG_LEVEL", logging.WARN)
+        try:
+            root_logger.setLevel(log_level)
+        except ValueError:
+            root_logger.setLevel(logging.DEBUG)
+            root_logger.debug("unknown log level '%s'; DEBUG will be used instead" % log_level)
+            log_level = logging.DEBUG
         self.log = logging.getLogger(type(self).__name__)
-        self.log.setLevel(os.getenv("RWB_LOG_LEVEL", logging.WARN))
+        self.log.setLevel(log_level)
         self.log.addHandler(handler)
         self.log.propagate = False
         

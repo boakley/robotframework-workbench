@@ -5,7 +5,6 @@ import ttk
 #from core.dte import DynamicTableEditor
 from rwb.widgets import DynamicTableEditor
 from dte_margin import DteMargin
-from rwb.widgets import AutoScrollbar
 import codecs
 import re
 import os
@@ -155,13 +154,13 @@ class EditorPage(tk.Frame):
         self.close_button = tk.Button(self.nameframe, text="close [x]", 
                                       borderwidth=1, relief="raised",
                                       highlightthickness=0,
-                                      foreground="white",
+                                      foreground="black",
                                       command=lambda: self.dte.event_generate("<<Close>>"))
         self.nameentry.insert(0, self.name)
 #        self.nameentry.pack(fill="both", expand="True")
         self.namepath = tk.Label(self.nameframe, 
                                  text="<unsaved>",
-                                 anchor="sw", borderwidth=0, foreground="gray")
+                                 anchor="sw", borderwidth=0, foreground="gray", background="white")
 #                                 background=core.colors.background3)
         if self.path is not None:
             self.namepath.configure(text=self.path)
@@ -197,19 +196,19 @@ class EditorPage(tk.Frame):
                                      highlightthickness=0, width=4*em)
         self.linenumbers.attach(self.dte)
         self.configure(background=self.dte.cget("background"))
-        vsb = AutoScrollbar(self,
+        vsb = ttk.Scrollbar(self,
                             command=self.dte.yview, 
                             orient="vertical")
-        hsb = AutoScrollbar(self,
+        hsb = ttk.Scrollbar(self,
                             command=self.dte.xview, 
                             orient="horizontal")
         filler = tk.Frame(self, 
-                          borderwidth=0, highlightthickness=0)
+                          borderwidth=0, highlightthickness=0, background=self.nameframe.cget("background"))
 #        filler = tk.Frame(self, borderwidth=0, highlightthickness=0)
         self.dte.configure(xscrollcommand=hsb.set, yscrollcommand=self.OnYviewChanged)
         self.linenumbers.grid(row=1, column=0, sticky="ns", padx=0, pady=4, ipadx=2)
-        self.nameframe.grid(row=0, column=1, sticky="nsew", columnspan=2)
-        filler.grid(row=0, column=0, sticky="nsew", padx=0)
+        self.nameframe.grid(row=0, column=0, sticky="nsew", columnspan=3)
+#        filler.grid(row=0, column=0, sticky="nsew", padx=0)
         self.dte.grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
         vsb.grid(row=1, column=2, sticky="ns", pady=(4,0))
         hsb.grid(row=2, column=0, columnspan=2, sticky="ew")

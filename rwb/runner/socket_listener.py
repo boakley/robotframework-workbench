@@ -7,8 +7,9 @@ import os
 import socket
 import sys
 import json
+from SimpleXMLRPCServer import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
 
-PORT = 5007
+PORT = 8910
 HOST = "localhost"
 
 # Robot expects the class to be the same as the filename, so
@@ -82,7 +83,7 @@ class socket_listener(object):
             self.sock.close()
 
     def _connect(self):
-        '''Establish a connection for sending pickles'''
+        '''Establish a connection for sending JSON data'''
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((self.host, self.port))
@@ -93,7 +94,9 @@ class socket_listener(object):
 
     def _send_socket(self, name, *args):
         if self.sock:
-            packet = json.dumps([name,] + list(args)) + "\n"
-            self.filehandler.write(packet)
-            self.filehandler.flush()
-
+            try:
+                packet = json.dumps([name,] + list(args)) + "\n"
+                self.filehandler.write(packet)
+                self.filehandler.flush()
+            except Exception, e:
+                print "writing to the socket failed:", e

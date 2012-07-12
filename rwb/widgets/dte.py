@@ -106,6 +106,10 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         '''.format(widget=widget, post_change_hook=post_change_hook))
         self._last_current_cell_start = ""
 
+    @property
+    def current_row_number(self):
+        return self.index("insert").split(".")[0]
+
     def set_completion_choices(self, choices):
         self.list.delete(0, "end")
         for string in choices:
@@ -224,6 +228,17 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         self.tag_add("like", "%s.0 linestart" % start, "%s.0 lineend+1c" % end)
         return range(start, end+1)
     
+    def get_lines(self, start="1.0", end="end"):
+        '''Generator which returns all whole lines from start to end
+        
+        The first value is the whole line that contains the start index,
+        The last value is the whole line that contains the end index. Start
+        and end are not required to be the actual start and end of a line
+        '''
+        while self.compare(start, "<", end):
+            yield self.get("%s linestart" % start, "%s lineend" % start)
+            start = self.index("%s +1line"% start)
+
     def get_rows(self, rownums):
         result = []
         for rownum in rownums:

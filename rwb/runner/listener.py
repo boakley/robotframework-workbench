@@ -13,20 +13,22 @@ import StringIO
 import Tkinter as tk
 import json
 
-class RemoteRobotListener(tk.Frame):
-    '''A Robot Framework listener that listens over a socket
+class JSONSocketServer(tk.Frame):
+    '''A simple event-based socket server
 
-    This creates an event-based socket server that listens for
-    listener events sent to it from a robot test running in 
-    another process (and potentially on another machine).
+    This listens for messages on the socket, translates them
+    from JSON, then calls the callback.
 
     This uses the Tkinter socket code and fileevents because
-    they are much easier to work with than python threads. 
+    they are (IMHO) much easier to work with than python threads. 
+    It is implemented as a widget so we can work with the
+    event loop, and for easy cleanup when the widget is destroyed
+    (but before the python object is actually deleted)
 
     Inputs:
 
     root     - a tkinter root window
-    callback - a function to be called for each message from a running robot test
+    callback - a function to be called upon receipt of a message
 
     '''
     def __init__(self, parent, callback, port=0):
@@ -39,7 +41,6 @@ class RemoteRobotListener(tk.Frame):
         # is a proxy for our python method named "callback_proxy"
         parent.createcommand("socket_callback", self.callback_proxy)
 
-        print "port passed in:", port
         # This runs some Tcl code to establish a socket server. 
         # the code returns the port that the server is running on.
         # Sorry, but Tcl's socket handling with fileevents is 
@@ -63,7 +64,8 @@ class RemoteRobotListener(tk.Frame):
     def callback_proxy(self, data):
         '''Deserialize the data and pass it to the callback
 
-        This is called whenever data arrives on the socket.
+        This is called by the underlying tcl socket mechanism
+        whenever data arrives on the socket.
         '''
         try:
             self.callback(*json.loads(data))
@@ -90,3 +92,7 @@ class RemoteRobotListener(tk.Frame):
             }
        ''' % self.port)
 
+# for backwards compatibility with older code...
+# (old. HA! this isn't even at version 1.0 yet!)
+class RemoteRobotListener(JSONSocketServer):
+    pass

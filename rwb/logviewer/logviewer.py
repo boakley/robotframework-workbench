@@ -21,9 +21,10 @@ import sys
 from rwb.images import data as icons
 
 class LogTree(ttk.Frame):
-    def __init__(self, parent, fail_only=False):
+    def __init__(self, parent, fail_only=False, condensed=False):
         ttk.Frame.__init__(self, parent)
 
+        self.condensed = condensed
         self.fail_only = fail_only
         self.tree = ttk.Treeview(self, columns=("starttime", "endtime", "feh"), 
                                  displaycolumns="")

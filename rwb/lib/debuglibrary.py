@@ -80,7 +80,7 @@ class DebugLibrary(object):
                     error.ROBOT_EXIT_ON_FAILURE = True
                     raise error
             except Exception, e:
-                print "exception:", e
+                BuiltIn().log("unexpected error handling request from debugger: %s" % str(e), "DEBUG")
                 raise
 
     def _resume(self):

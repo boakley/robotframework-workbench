@@ -11,23 +11,22 @@ import tkMessageBox
 import argparse
 
 NAME="logviewer"
-
 DEFAULT_SETTINGS = {
     NAME: {}
 }
 
 class LogViewerApp(AbstractRwbApp):
     def __init__(self):
-        self.args = self._parse_args()
+        args = self._parse_args()
 
-        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
+        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS, args)
 
         self._create_menubar()
         self._create_toolbar()
         self._create_statusbar()
 
         vsb = ttk.Scrollbar(self, orient="vertical")
-        self.viewer = LogTree(self, fail_only=self.args.fail_only)
+        self.viewer = LogTree(self, fail_only=self.args.fail_only, condensed=self.args.condensed)
         vsb.configure(command=self.viewer.tree.yview)
         self.viewer.tree.configure(yscrollcommand=vsb.set)
         self.toolbar.pack(side="top", fill="x")
@@ -47,19 +46,20 @@ class LogViewerApp(AbstractRwbApp):
         parser = argparse.ArgumentParser(prog="rwb.logviewer")
         parser.add_argument("file",nargs="?",
                             help="the path to a robot output file (eg: output.xml)")
-        parser.add_argument("-f", "--fail_only", action="store_true",
+        parser.add_argument("-f", "--fail-only", action="store_true",
                             help="only display failed suites, tests and keywords")
+        parser.add_argument("-c", "--condensed", action="store_true",
+                            help="don't auto-expand failed keyworeds")
         return parser.parse_args()
 
     def _on_select(self, event):
-        print "select!"
         selection = self.viewer.tree.selection()
-        print "selection:", selection
+        self.log.debug("selection: %s" % selection)
         if len(selection) > 0:
             item = selection[0]
-            print "item:", item
-            print "tags:", self.viewer.tree.item(item, "tags")
-            print "values:", self.viewer.tree.item(item, "values")
+            self.log.debug("item: %s" % item)
+            self.log.debug("tags: %s" % ",".join(self.viewer.tree.item(item, "tags")))
+            self.log.debug("values: %s" % ",".join(self.viewer.tree.item(item, "values")))
             x = self.viewer.tree.item(item, "values")[-1]
 
     def _create_toolbar(self):

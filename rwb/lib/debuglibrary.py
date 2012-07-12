@@ -15,17 +15,30 @@ debugging robot test cases:
 from SimpleXMLRPCServer import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
 from robot.libraries.BuiltIn import BuiltIn
 import robot.errors
+import sys
+
+class CustomXMLRPCServer(SimpleXMLRPCServer):
+    def handle_request(self):
+        self._timedout=False
+        SimpleXMLRPCServer.handle_request(self)
+
+    def handle_timeout(self):
+        self._timedout=True
+
+    def timedout(self):
+        return self._timedout
 
 class DebugLibrary(object):
     # global, so we can create a single XMLRPC server that lasts for
     # the life of the suite
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     def __init__(self, port=8911):
-        self.port=8911
-        self.server = SimpleXMLRPCServer(("localhost", int(port)), 
+        self.timeout = 5 ;# seconds
+        self.server = CustomXMLRPCServer(("localhost", 0), 
                                    SimpleXMLRPCRequestHandler, 
                                    allow_none=True,
                                    logRequests=False)
+        self.port = self.server.server_address[1]
         self.server.register_function(self._ping, "ping")
         self.server.register_function(self._resume, "resume")
         self.server.register_function(self._get_variables, "get_variables")
@@ -39,15 +52,24 @@ class DebugLibrary(object):
         # sends back a command to continue or fail (via the XMLRPC
         # methods "stop", "fail_test", "fail_suite"  or "resume"
         # "fail_suite" isn't working right now :-(
-        log_message = ":break:" if message is None else ":break: %s" % message
+        log_message = ":break:%s:" % self.port
+        if message is not None:
+            log_message += " " + message
+        sys.stdout.flush()
         BuiltIn().log(log_message, "DEBUG")
 
         # this enters into a mini event loop, handling requests
-        # from the remote listener. 
+        # from the remote listener. Of course, if there is no
+        # remote listener this will hang. 
         self.state = "break"
+        self.server.timeout=self.timeout
         while self.state == "break":
             try:
                 self.server.handle_request()
+                if self.server.timedout():
+                    BuiltIn().log("timeout waiting for debugger", "WARN")
+                    return
+
                 if self.state == "continue": break
                 if self.state == "fail_test":
                     raise AssertionError("debug fail")
@@ -58,6 +80,7 @@ class DebugLibrary(object):
                     error.ROBOT_EXIT_ON_FAILURE = True
                     raise error
             except Exception, e:
+                print "exception:", e
                 raise
 
     def _resume(self):

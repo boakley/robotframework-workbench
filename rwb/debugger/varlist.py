@@ -22,6 +22,10 @@ class VariableList(tk.Frame):
         self.varlist.column("name", width=200, stretch=False)
         self.varlist.column("value", stretch=True)
 
+    def reset(self):
+        for item in self.varlist.get_children(""):
+            self.varlist.delete(item)
+
     def add(self, name, value):
         self.varlist.insert("", "end", values=(name, value,))
 

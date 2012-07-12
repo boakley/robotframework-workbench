@@ -1,4 +1,4 @@
-
+'''A collection of sometimes-useful decorators'''
 def timeit(func):
     import time
     def _timeit(*arg):
@@ -34,22 +34,4 @@ def cached_property(func):
             return getattr(self, attr_name)
     return _cached_property
 
-if __name__ == "__main__":
-    class Foo(object):
-        @cached_property
-        def foo(self):
-            print "calculating foo..."
-            return "this is foo"
-
-        @cached_property
-        def bar(self):
-            print "calculating bar..."
-            return "this is bar"
-
-
-    foo=Foo()
-    print "foo.foo:", foo.foo
-    print "foo.bar:", foo.bar
-    print "foo.foo:", foo.foo
-    print "foo.bar:", foo.bar
 

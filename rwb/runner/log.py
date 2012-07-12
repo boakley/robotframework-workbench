@@ -101,12 +101,21 @@ class RobotLogMessages(ttk.Frame):
     
 class RobotLogTree(tk.Frame):
     '''Provides a tree view for suite, test and keyword results'''
-    def __init__(self, parent):
+    def __init__(self, parent, auto_open=None):
         self._init_images()
+        self.autoscroll=True
+        # auto_open is a list of one or more of the following:
+        # "failed" - auto open all ancestors of a failed keyword
+        # "suite" - auto open all suites
+        # "test" - auto open all test cases
+        if auto_open is None:
+            self.auto_open=["failed","suite"]
+        else:
+            self.auto_open=auto_open
         tk.Frame.__init__(self, parent,name="log_tree")
         self.tree = ttk.Treeview(self, columns=("event_id", "timestamp"),
                                  displaycolumns=("timestamp",),
-                                 height=200)
+                                 height=20)
         self.tree.column("#0", stretch=True)
         tswidth = tkFont.nametofont("TkDefaultFont").measure("00:00:00.000")
         self.tree.column("timestamp", width=tswidth+8, stretch=False)
@@ -127,6 +136,11 @@ class RobotLogTree(tk.Frame):
         self._nodes = [""]
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
         self.vsb = vsb
+
+    def expand_all(self, node=""):
+        self.tree.item(node, open=True)
+        for child in self.tree.get_children(node):
+            self.expand_all(child)
 
     def reset(self):
         '''Remove all items from the view'''
@@ -154,8 +168,7 @@ class RobotLogTree(tk.Frame):
             # think there may be a timing issue with the treeview because
             # this strategy of checking the yview has worked for me in
             # the past with other widgets.
-            autoscroll = (starting_yview[1] >= 1.0)
-            if autoscroll:
+            if self.autoscroll and (starting_yview[1] >= 1.0):
                 self.tree.yview("moveto", "1.0")
 
     def _init_images(self):
@@ -176,8 +189,9 @@ class RobotLogTree(tk.Frame):
     def _start_suite(self, event_id, name, attrs):
         parent = self._nodes[-1]
         starttime = attrs["starttime"].split(" ")[1]
+        default_open = "suite" in self.auto_open or parent == ""
         node = self.tree.insert(parent, "end", text=" %s" % name, 
-                                open=True, image=self._image["suite"],
+                                open=default_open, image=self._image["suite"],
                                 values=(event_id, starttime))
         self._nodes.append(node)
 
@@ -187,8 +201,9 @@ class RobotLogTree(tk.Frame):
     def _start_test(self, event_id, name, attrs):
         parent = self._nodes[-1]
         starttime = attrs["starttime"].split(" ")[1]
+        default_open = "test" in self.auto_open
         node = self.tree.insert(parent, "end", text=" %s" % name, 
-                                open=False,image=self._image["test"],
+                                open=default_open,image=self._image["test"],
                                 values=(event_id, starttime))
         self._nodes.append(node)
 
@@ -200,8 +215,9 @@ class RobotLogTree(tk.Frame):
         parent = self._nodes[-1]
         string = " %s" % (" | ".join([name] + attrs["args"]))
         starttime = attrs["starttime"].split(" ")[1]
+        default_open = "keyword" in self.auto_open
         node = self.tree.insert(parent, "end", text=string, 
-                                open=False,image=self._image["keyword"],
+                                open=default_open,image=self._image["keyword"],
                                 values=(event_id, starttime))
         self._nodes.append(node)
 
@@ -209,7 +225,7 @@ class RobotLogTree(tk.Frame):
         node = self._nodes.pop()
         if attrs["status"] == "FAIL":
             self.tree.item(node, tags=("FAIL"))
-            while node != "":
+            while node != "" and "failed" in self.auto_open:
                 parent = self.tree.parent(node)
                 self.tree.item(parent, open=True)
                 node = parent

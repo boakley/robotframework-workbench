@@ -4,7 +4,6 @@ import xmlrpclib
 import re
 from SimpleXMLRPCServer import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
 from rwb.runner import RobotLogTree, RobotLogMessages
-from rwb.runner import RobotFailureList
 from rwb.lib import AbstractRwbApp
 from rwb.widgets import Statusbar
 from varlist import VariableList
@@ -20,10 +19,6 @@ DEFAULT_SETTINGS = {
     }
 
 class DebuggerApp(AbstractRwbApp):
-    def _get_state(self):
-        print "get_state called..."; import sys; sys.stdout.flush()
-        return "break-on-error"
-
     def __init__(self):
         AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
         port = int(self.get_setting("debugger.port"))

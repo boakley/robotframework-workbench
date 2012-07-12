@@ -43,6 +43,7 @@ DEFAULT_SETTINGS = {
     NAME: {
         "recent files": [],
         "keymap": "emacs", # not implemented yet. Bummer, that.
+        "geometry": "1000x800",
         "extensions": {
             "transmogrifier": os.path.join(here, "extensions", "transmogrifier.py"),
             "keywords": os.path.join(here, "extensions", "keywords.py"),
@@ -56,18 +57,14 @@ MIN_FONT_SIZE = 8
 class EditorApp(AbstractRwbApp, EditorAPI):
     def __init__(self):
         AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
-#        tk.Tk.__init__(self, *args, **kwargs)
         EditorAPI.__init__(self)
 
         self.extensions = {}
 
         self._tkvar = {"shelf": tk.IntVar()}
 
-#        self._initialize_logging(self.name)
-#        self._initialize_preferences()
         self._initialize_keyword_database()
         self.loaded_files = {}
-        self.wm_geometry("900x800")
 
         self.pw = ttk.PanedWindow(self, orient="vertical")
 
@@ -356,14 +353,19 @@ class EditorApp(AbstractRwbApp, EditorAPI):
     def open(self, *args):
         '''Opens one or more files'''
         errors = []
+        autoselect=True
         for path in args:
             try:
                 if os.path.isdir(path):
                     self._load_dir(path)
                 else:
-                    self._load_file(path)
+                    page = self._load_file(path)
+                    if autoselect:
+                        self.notebook.select_page(page)
+                        self.autoselect=False
             except Exception, e:
                 errors.append((path, e))
+
         if len(errors) == 1:
             message = "%s\n%s" % errors[0]
             tkMessageBox.showwarning("Error opening file",message)
@@ -387,11 +389,12 @@ class EditorApp(AbstractRwbApp, EditorAPI):
     def _load_file(self, filename):
         '''Load a file. If the filename is already loaded, select that tab'''
 
-        filename = os.path.abspath(filename)
+#        filename = os.path.abspath(filename)
         try:
             existing_page = self.notebook.get_page_for_path(filename)
             if existing_page is not None:
                 self.notebook.select_page(existing_page)
+                return existing_page
             else:
                 new_page = self.notebook.add_page(filename)
                 recent_files = self.get_setting("editor.recent files", [])
@@ -399,6 +402,7 @@ class EditorApp(AbstractRwbApp, EditorAPI):
                     recent_files.append(filename)
                 self.save_settings()
                 self._update_recent_files_menu(filename)
+                return new_page
 
         except urllib2.HTTPError, e:
             raise e

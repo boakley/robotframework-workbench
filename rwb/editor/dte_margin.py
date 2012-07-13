@@ -24,6 +24,8 @@ class DteMargin(tk.Canvas):
         return int(self.text.index(index).split(".")[0])
 
     def update_markers(self, *args):
+        '''Sorry, not quite ready for prime time just yet'''
+        return
         current_line = self.text.index("insert").split(".")[0]
         like_lines = self.text.find_like_rows(current_line)
         bg = self.cget("background")

@@ -62,5 +62,3 @@ proc widget_proxy {actual_widget post_change_hook args} {
     return $result
 }
 '''
-
-

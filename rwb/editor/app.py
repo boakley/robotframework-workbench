@@ -121,9 +121,6 @@ class EditorApp(AbstractRwbGui, EditorAPI):
         if filename is not None:
             filename = os.path.abspath(filename)
             if filename not in filenames:
-                print "filename is not in filenames"
-                print "filename:", filename
-                print "filenames:", filenames
                 filenames.insert(0, filename)
                 settings["recent files"] = filenames
                 self.save_settings()

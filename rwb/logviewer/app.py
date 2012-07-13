@@ -39,6 +39,7 @@ class LogViewerApp(AbstractRwbGui):
         if self.args.file != None:
             self.after_idle(self.after, 1, lambda path=self.args.file: self.open(path))
 #            self.after_idle(self.after, 1, lambda path=sys.argv[1]: self.open(path))
+        self.wm_protocol("WM_DELETE_WINDOW", self.on_delete_window)
 
     def _parse_args(self):
         '''Parse command line arguments'''
@@ -64,13 +65,17 @@ class LogViewerApp(AbstractRwbGui):
     def _create_toolbar(self):
         self.toolbar = ttk.Frame(self)
         suite_button = ToolButton(self.toolbar, text="Suites", width=0,
-                                  tooltip="Expand to show all suites")
+                                  tooltip="Expand to show all suites",
+                                  command=self._on_expand_suites)
         test_button = ToolButton(self.toolbar, text="Test Cases",  width=0,
-                                 tooltip="Expand to show all suites and test cases")
+                                 tooltip="Expand to show all suites and test cases",
+                                 command=self._on_expand_tests)
         kw_button = ToolButton(self.toolbar, text="Test Keywords",  width=0,
-                               tooltip="Expand to show all suites, test cases, and their keywords")
+                               tooltip="Expand to show all suites, test cases, and their keywords",
+                               command=self._on_expand_test_keywords)
         all_button = ToolButton(self.toolbar, text="Expand All Keywords", width=0,
-                                tooltip="Expand to show all suites, test cases, and keywords")
+                                tooltip="Expand to show all suites, test cases, and keywords",
+                                command=self._on_expand_all)
 
         # this is just for experimentation; I don't really plan to have this on the toolbar
         next_fail = ToolButton(self.toolbar, text="Next Failure", width=0,
@@ -120,14 +125,21 @@ class LogViewerApp(AbstractRwbGui):
         self.file_menu = tk.Menu(self.menubar, tearoff=False)
         self.file_menu.add_command(label="Open...", command=self._on_open)
         self.file_menu.add_separator()
-        self.file_menu.add_command(label="Exit", command=self._on_exit)
+        self.file_menu.add_command(label="Exit", command=self.on_exit)
 
         self.view_menu = tk.Menu(self.menubar, tearoff=False)
-        self.view_menu.add_command(label="Expand Suites", underline=7)
-        self.view_menu.add_command(label="Expand Test Cases", underline=7)
-        self.view_menu.add_command(label="Expand Test Case Keywords", underline=17)
-        self.view_menu.add_command(label="All Keywords", underline=0, 
+        self.view_menu.add_command(label="Expand Suites", underline=7,
+                                   command=self._on_expand_suites)
+        self.view_menu.add_command(label="Expand Test Cases", underline=7,
+                                   command=self._on_expand_tests)
+        self.view_menu.add_command(label="Expand Test Case Keywords", underline=17,
+                                   command=self._on_expand_test_keywords)
+        self.view_menu.add_command(label="Expand All Keywords", underline=7, 
                                    command=self._on_expand_all)
+        self.view_menu.add_separator()
+        self.view_menu.add_command(label="Collapse all", underline=0, 
+                                   command=self._on_collapse_all)
+        
 
         self.help_menu = tk.Menu(self, tearoff=False)
         self.help_menu.add_command(label="View help on the web", command=self._on_view_help)
@@ -165,16 +177,31 @@ class LogViewerApp(AbstractRwbGui):
             tkMessageBox.showwarning("Unable to open the file\n\n%s" % str(e))
             self.wm_title("Robot Framework Workbench Log Viewer")
 
+    def _on_collapse_all(self):
+        self.viewer.collapse_all()
+
     def _on_expand_all(self):
         self.viewer.expand_all()
+
+    def _on_expand_suites(self):
+        self.viewer.expand_suites()
+
+    def _on_expand_tests(self):
+        self.viewer.expand_tests()
+
+    def _on_expand_test_keywords(self):
+        self.viewer.expand_test_keywords()
 
     def _on_view_help(self):
         import webbrowser
         webbrowser.open(HELP_URL)
 
-    def _on_exit(self):
+    def on_delete_window(self, event=None):
+        # the destroy may take a while; let's hide the
+        # window so it at least looks like it exited quickly
+        self.wm_withdraw()
+        self.update()
         self.destroy()
-        sys.exit(0)
 
 
 if __name__ == "__main__":

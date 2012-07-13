@@ -24,6 +24,7 @@ class LogTree(ttk.Frame):
     def __init__(self, parent, fail_only=False, condensed=False):
         ttk.Frame.__init__(self, parent)
 
+        self._node_number=0
         self.condensed = condensed
         self.fail_only = fail_only
         self.tree = ttk.Treeview(self, columns=("starttime", "endtime", "feh"), 
@@ -74,26 +75,67 @@ class LogTree(ttk.Frame):
         for item in self.tree.get_children(""):
             self.tree.delete(item)
 
+    def expand_tests(self, node=""):
+        '''Expand the root node, suites, and test cases
+
+        The goal is to make all test cases visible, everything else not.
+        '''
+        self.tree.item(node, open=True)
+        for item_id in self.tree.get_children(node):
+            item_type = self._get_type(item_id)
+            if item_type in ("suite", "test"):
+                self.expand_tests(item_id)
+
     def expand_suites(self, node=""):
         '''Expand only the root and suites that have other suites
 
         The goal is to make all suites visible, everything else not.
         '''
         self.tree.item(node, open=True)
-        for child in self.tree.get_children(node):
-            self.expand_all(child)
-
+        for item_id in self.tree.get_children(node):
+            item_type = self._get_type(item_id)
+            if item_type ==  "suite":
+                self.expand_suites(item_id)
         
     def expand_all(self, node=""):
         self.tree.item(node, open=True)
         for child in self.tree.get_children(node):
             self.expand_all(child)
 
+    def collapse_all(self, node=""):
+        if node == "":
+            self.tree.item("", open=True)
+        for item_id in self.tree.get_children(node):
+            self.tree.item(item_id, open=False)
+            self.collapse_all(item_id)
+    def expand_test_keywords(self, node=""):
+        '''Expand all keywords that have a test case as a parent
+
+        The goal is to expand all keywords used in a test, but not
+        all keywords used inside other keywords
+        '''
+        for item_id in self.tree.get_children(node):
+            item_type = self._get_type(item_id)
+            parent_id = self.tree.parent(item_id)
+            parent_type = self._get_type(parent_id)
+            if item_type == "keyword" and parent_type == "test":
+                self.tree.see(item_id)
+            self.expand_test_keywords(item_id)
+
+    def _new_node_id(self, type):
+        '''Return a new node id for the given type'''
+        if type not in ("test","keyword","msg","suite"):
+            raise Exception("invalid type '%s'" % type)
+        self._node_number += 1
+        node_id = "%s_%d" % (type, self._node_number)
+        return node_id
+        
     def _add_suite(self, suite, parent_node=""):
         if self.fail_only and not suite.failed:
             return
 
         node = self.tree.insert(parent_node, "end", 
+                                iid=self._new_node_id("suite"),
                                 text=suite.name,
                                 image=self._image["suite"],
                                 values=(suite.starttime,suite.endtime,suite),
@@ -122,6 +164,7 @@ class LogTree(ttk.Frame):
             return
 
         node = self.tree.insert(parent_node, "end", 
+                                iid=self._new_node_id("test"),
                                 text=test.name,
                                 values=(test.starttime,test.endtime, test),
                                 image=self._image["test"],
@@ -134,6 +177,7 @@ class LogTree(ttk.Frame):
 #        name = kw.name.rsplit(".",1)[-1]
         text = " | ".join([kw.shortname] + kw.args)
         kw_node = self.tree.insert(parent_node, "end", 
+                                   iid=self._new_node_id("keyword"),
                                    text=text,
                                    values=(kw.starttime,kw.endtime, kw),
                                    image=self._image["keyword"],
@@ -159,11 +203,15 @@ class LogTree(ttk.Frame):
             lines = msg.text.split("\n")
             for line in lines:
                 self.tree.insert(kw_node, "end",
+                                 iid=self._new_node_id("msg"),
                                  text=line,
                                  values=(msg.starttime, msg.endtime, msg),
                                  open=False,
                                  tags=("message", msg.level))
             
+    def _get_type(self, item_id):
+        return item_id.split("_",1)[0]
+
     def previous_with_tag(self, *tags):
         '''Find previous item with the given tags
         '''

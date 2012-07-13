@@ -145,18 +145,22 @@ class EditorPage(tk.Frame):
 
     def _create_widgets(self):
         self.nameframe = tk.Frame(self, background='white')
-        self.nameentry = tk.Entry(self.nameframe, relief="flat", 
+#        self.nameentry = tk.Entry(self.nameframe, relief="flat", 
+        self.nameentry = tk.Label(self.nameframe, relief="flat",
                                   font=("Helvetica", 16, "normal"), 
-                                  insertbackground="#ff0000",
-                                  insertwidth=1,
-                                  highlightthickness=0,
-                                  textvariable = self._name_var)
+                                  anchor="w",
+#                                  insertbackground="#ff0000",
+#                                  insertwidth=1,
+#                                  highlightthickness=0,
+#                                  textvariable = self._name_var)
+)
         self.close_button = tk.Button(self.nameframe, text="close [x]", 
                                       borderwidth=1, relief="raised",
                                       highlightthickness=0,
                                       foreground="black",
                                       command=lambda: self.dte.event_generate("<<Close>>"))
-        self.nameentry.insert(0, self.name)
+        self.nameentry.configure(text=self.name)
+#        self.nameentry.insert(0, self.name)
 #        self.nameentry.pack(fill="both", expand="True")
         self.namepath = tk.Label(self.nameframe, 
                                  text="<unsaved>",

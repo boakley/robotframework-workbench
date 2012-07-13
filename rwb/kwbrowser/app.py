@@ -14,6 +14,7 @@ from rwb.lib import AbstractRwbGui
 from kwbrowser import KwBrowser
 
 NAME="kwbrowser"
+HELP_URL = "https://github.com/boakley/robotframework-workbench/wiki/rwb.kwbrowser%20User%20Guide"
 DEFAULT_SETTINGS={
     NAME: {
         "hide_private": True,
@@ -102,11 +103,20 @@ class Menubar(tk.Menu):
     '''A menubar for the KeywordTool application'''
     def __init__(self, parent, *args, **kwargs):
         tk.Menu.__init__(self, parent, *args, **kwargs)
-        self.fileMenu= tk.Menu(self, tearoff=False)
-        self.fileMenu.add_command(label="Load File...", 
+        self.file_menu= tk.Menu(self, tearoff=False)
+        self.file_menu.add_command(label="Load File...", 
                                   command=lambda: parent.event_generate("<<LoadFile>>"))
-        self.fileMenu.add_command(label="Reload", command=lambda: parent.event_generate("<<Reload>>"))
-        self.fileMenu.add_separator()
-        self.fileMenu.add_command(label="Exit", command=lambda: sys.exit(0))
-        self.add_cascade(label="File", menu=self.fileMenu)
+        self.file_menu.add_command(label="Reload", command=lambda: parent.event_generate("<<Reload>>"))
+        self.file_menu.add_separator()
+        self.file_menu.add_command(label="Exit", command=lambda: sys.exit(0))
+        self.add_cascade(label="File", menu=self.file_menu)
 
+        self.help_menu = tk.Menu(self, tearoff=False)
+        self.help_menu.add_command(label="View help on the web", command=self._on_view_help)
+        self.help_menu.add_separator()
+        self.help_menu.add_command(label="About the robotframework workbench", command=parent._on_about)
+        self.add_cascade(label="Help", menu=self.help_menu)
+
+    def _on_view_help(self):
+        import webbrowser
+        webbrowser.open(HELP_URL)

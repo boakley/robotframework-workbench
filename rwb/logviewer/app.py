@@ -11,6 +11,7 @@ import tkMessageBox
 import argparse
 
 NAME="logviewer"
+HELP_URL = "https://github.com/boakley/robotframework-workbench/wiki/rwb.logviewer-User-Guide"
 DEFAULT_SETTINGS = {
     NAME: {}
 }
@@ -130,8 +131,14 @@ class LogViewerApp(AbstractRwbGui):
         self.view_menu.add_command(label="All Keywords", underline=0, 
                                    command=self._on_expand_all)
 
+        self.help_menu = tk.Menu(self, tearoff=False)
+        self.help_menu.add_command(label="View help on the web", command=self._on_view_help)
+        self.help_menu.add_separator()
+        self.help_menu.add_command(label="About the robotframework workbench", command=self._on_about)
+
         self.menubar.add_cascade(menu=self.file_menu, label="File", underline=0)
         self.menubar.add_cascade(menu=self.view_menu, label="View", underline=0)
+        self.menubar.add_cascade(menu=self.help_menu, label="Help", underline=0)
 
     def _create_statusbar(self):
         self.statusbar = Statusbar(self)
@@ -162,6 +169,10 @@ class LogViewerApp(AbstractRwbGui):
 
     def _on_expand_all(self):
         self.viewer.expand_all()
+
+    def _on_view_help(self):
+        import webbrowser
+        webbrowser.open(HELP_URL)
 
     def _on_exit(self):
         self.destroy()

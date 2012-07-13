@@ -25,6 +25,7 @@ from rwb.lib.configobj import ConfigObj
 from rwb.lib.colors import ColorScheme
 from rwb.lib.fonts import FontScheme
 from rwb.widgets import SettingsDialog
+from rwb.widgets import AboutBoxDialog
 
 class AbstractRwbApp(object):
     def __init__(self, name, default_settings, args=None):
@@ -183,6 +184,10 @@ class AbstractRwbGui(AbstractRwbApp, tk.Tk):
 
     def get_settings_frames(self):
         return self._settings_frames
+
+    def _on_about(self):
+        dialog = AboutBoxDialog(self)
+        dialog.show()
 
     def _restore_geometry(self):
         geometry = self.get_setting("%s.geometry" % self.name)

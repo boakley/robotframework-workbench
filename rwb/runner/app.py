@@ -17,7 +17,6 @@ limitations under the License.
 
 TODO: 
   * add progress bar
-  * add menubar
   * fully implement notion of IDs
   * print currently executing test suite in status bar
 
@@ -41,7 +40,7 @@ import shlex
 import rwb
 
 NAME="runner"
-
+HELP_URL="https://github.com/boakley/robotframework-workbench/wiki/rwb.runner-User-Guide"
 DEFAULT_SETTINGS = {
     NAME: {
         "pybot": "python -m robot.runner '%S'",
@@ -85,14 +84,20 @@ class RunnerApp(AbstractRwbGui):
         self.menubar = tk.Menu(self)
         self.configure(menu=self.menubar)
 
-        self.rwbMenu = tk.Menu(self, tearoff=False)
-        self.menubar.add_cascade(menu=self.rwbMenu, label="rwb", underline=0)
-        self.rwbMenu.add_command(label="Settings", command=self.show_settings_dialog)
+#        self.rwbMenu = tk.Menu(self, tearoff=False)
+#        self.menubar.add_cascade(menu=self.rwbMenu, label="rwb", underline=0)
+#        self.rwbMenu.add_command(label="Settings", command=self.show_settings_dialog)
 
         self.file_menu = tk.Menu(self.menubar, tearoff=False)
         self.file_menu.add_command(label="Exit", command=self._on_exit)
 
+        self.help_menu = tk.Menu(self, tearoff=False)
+        self.help_menu.add_command(label="View help on the web", command=self._on_view_help)
+        self.help_menu.add_separator()
+        self.help_menu.add_command(label="About the robotframework workbench", command=self._on_about)
+
         self.menubar.add_cascade(menu=self.file_menu, label="File", underline=0)
+        self.menubar.add_cascade(menu=self.help_menu, label="Help", underline=0)
     
     def _toggle_command(self, collapse=None):
         if self.command_text.winfo_viewable() or collapse==True:
@@ -103,7 +108,6 @@ class RunnerApp(AbstractRwbGui):
             self.command_expander.configure(text="V")
 
     def _create_command_line(self):
-        print "creating command line..."
         self.command_frame = tk.Frame(self, borderwidth=2, relief="groove")
         self.command_expander = ToolButton(self.command_frame, 
                                            imagedata=None, text=">", width=1,
@@ -238,6 +242,11 @@ class RunnerApp(AbstractRwbGui):
     def _on_exit(self):
         self.destroy()
         sys.exit(0)
+
+    def _on_view_help(self):
+        import webbrowser
+        webbrowser.open(HELP_URL)
+
 
         
 if __name__ == "__main__":

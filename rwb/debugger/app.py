@@ -10,6 +10,7 @@ from varlist import VariableList
 from rwb.runner.listener import JSONSocketServer
 
 NAME = "debugger"
+HELP_URL="https://github.com/boakley/robotframework-workbench/wiki/rwb.debugger-User-Guide"
 DEFAULT_SETTINGS = {
     NAME: {
         "port": 8910,
@@ -152,7 +153,17 @@ class DebuggerApp(AbstractRwbGui):
         self.configure(menu=self.menubar)
         self.file_menu = tk.Menu(self.menubar, tearoff=False)
         self.file_menu.add_command(label="Exit", command=self.on_exit)
+        self.help_menu = tk.Menu(self.menubar, tearoff=False)
+        self.help_menu.add_command(label="View help on the web", command=self._on_view_help)
         self.menubar.add_cascade(menu=self.file_menu, label="File", underline=0)
+        self.help_menu.add_separator()
+        self.help_menu.add_command(label="About the robotframework workbench", command=self._on_about)
+        self.menubar.add_cascade(label="Help", menu=self.help_menu)
+
+    def _on_view_help(self):
+        import webbrowser
+        webbrowser.open(HELP_URL)
+#        page = self.notebook.add_custom_page(page_class=help.HelpPage)
 
     def _create_statusbar(self):
         self.statusbar = Statusbar(self)

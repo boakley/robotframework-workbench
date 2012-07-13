@@ -7,6 +7,7 @@ from rwb.widgets import Statusbar
 from rwb.runner.listener import RemoteRobotListener
 
 NAME = "monitor"
+HELP_URL="https://github.com/boakley/robotframework-workbench/wiki/rwb.monitor-User-Guide"
 DEFAULT_SETTINGS = {
     NAME: {
         "port": 8910,
@@ -36,7 +37,17 @@ class MonitorApp(AbstractRwbGui):
         self.file_menu = tk.Menu(self.menubar, tearoff=False)
         self.file_menu.add_command(label="Exit", command=self._on_exit)
 
+        self.help_menu = tk.Menu(self, tearoff=False)
+        self.help_menu.add_command(label="View help on the web", command=self._on_view_help)
+        self.help_menu.add_separator()
+        self.help_menu.add_command(label="About the robotframework workbench", command=self._on_about)
+
         self.menubar.add_cascade(menu=self.file_menu, label="File", underline=0)
+        self.menubar.add_cascade(menu=self.help_menu, label="Help", underline=0)
+
+    def _on_view_help(self):
+        import webbrowser
+        webbrowser.open(HELP_URL)
 
     def _on_exit(self):
         self.destroy()

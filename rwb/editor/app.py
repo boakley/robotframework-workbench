@@ -18,7 +18,6 @@ from rwb.widgets import ToolButton
 from rwb.images import data as icons
 from rwb.lib.keywordtable import KeywordTable
 from rwb.lib.configobj import ConfigObj
-from about_dialog import AboutBoxDialog
 from api import EditorAPI
 from custom_notebook import CustomNotebook
 from shelf import Shelf
@@ -38,6 +37,7 @@ from shelf import Shelf
 
 import os.path
 here = os.path.abspath(os.path.dirname(__file__))
+HELP_URL="https://github.com/boakley/robotframework-workbench/wiki/rwb.editor-User-Guide"
 NAME="editor"
 DEFAULT_SETTINGS = {
     NAME: {
@@ -582,10 +582,9 @@ class EditorApp(AbstractRwbGui, EditorAPI):
         self.menubar.add_cascade(label="Run", menu=run_menu)
 
         help_menu = tk.Menu(self.menubar, tearoff=False)
-        help_menu.add_command(label="View Help", command=self._on_view_help)
-        help_menu.add_command(label="View Shortcuts", command=self._on_view_shortcuts)
+        help_menu.add_command(label="View help on the web", command=self._on_view_help)
         help_menu.add_separator()
-        help_menu.add_command(label="About the workbench editor", command=self._on_about)
+        help_menu.add_command(label="About the robotframework workbench", command=self._on_about)
         self.menubar.add_cascade(label="Help", menu=help_menu)
 
         # keep public versions, so extensions can extend them
@@ -670,11 +669,9 @@ class EditorApp(AbstractRwbGui, EditorAPI):
         page = self.notebook.add_custom_page(page_class=help.ShortcutPage)
         
     def _on_view_help(self):
-        import help
-        page = self.notebook.add_custom_page(page_class=help.HelpPage)
-
-    def _on_about(self):
-        dialog = AboutBoxDialog(self)
+        import webbrowser
+        webbrowser.open(HELP_URL)
+#        page = self.notebook.add_custom_page(page_class=help.HelpPage)
 
     def _invoke_tool(self, tool):
         tool.invoke(self.notebook.get_current_page())

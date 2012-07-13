@@ -33,9 +33,10 @@ from console import RobotConsole
 from log import RobotLogTree, RobotLogMessages
 from listener import RemoteRobotListener
 from robot_tally import RobotTally
-from rwb.lib import AbstractRwbApp
+from rwb.lib import AbstractRwbGui
 from settings import GeneralSettingsFrame
 from tsubprocess import Process
+from rwb.widgets import ToolButton
 import shlex
 import rwb
 
@@ -47,17 +48,18 @@ DEFAULT_SETTINGS = {
         }
     }
 
-class RunnerApp(AbstractRwbApp):
+class RunnerApp(AbstractRwbGui):
     def __init__(self):
         # Among other things, this constructor initializes
         # logging and preferences. 
-        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
+        AbstractRwbGui.__init__(self, NAME, DEFAULT_SETTINGS)
         self.wm_geometry("800x600")
         self.tally = RobotTally()
         self._create_fonts()
         self._create_menubar()
         self._create_statusbar()
         self._create_toolbar()
+#        self._create_command_line()
         self._create_notebook()
 
         self.register(GeneralSettingsFrame)
@@ -75,7 +77,7 @@ class RunnerApp(AbstractRwbApp):
         self.statusbar = ttk.Frame(self)
         grip = ttk.Sizegrip(self.statusbar)
         grip.pack(side="right")
-        self.status_label = ttk.Label(self.statusbar, text="", anchor="w")
+        self.status_label = tk.Label(self.statusbar, text="", anchor="w")
         self.status_label.pack(side="left", fill="both", expand="true", padx=8)
         self.statusbar.pack(side="bottom", fill="x")
 
@@ -92,6 +94,29 @@ class RunnerApp(AbstractRwbApp):
 
         self.menubar.add_cascade(menu=self.file_menu, label="File", underline=0)
     
+    def _toggle_command(self, collapse=None):
+        if self.command_text.winfo_viewable() or collapse==True:
+            self.command_text.grid_remove()
+            self.command_expander.configure(text=">")
+        else:
+            self.command_text.grid()
+            self.command_expander.configure(text="V")
+
+    def _create_command_line(self):
+        print "creating command line..."
+        self.command_frame = tk.Frame(self, borderwidth=2, relief="groove")
+        self.command_expander = ToolButton(self.command_frame, 
+                                           imagedata=None, text=">", width=1,
+                                           command=self._toggle_command)
+        self.command_label = ttk.Label(self.command_frame, text="Command Line", anchor="w")
+        self.command_text = tk.Text(self.command_frame, wrap="word", height=3)
+        self.command_expander.grid(row=0, column=0)
+        self.command_label.grid(row=0, column=1, sticky="w")
+        self.command_text.grid(row=1, column=0, columnspan=2, sticky="nsew")
+        self.command_frame.pack(side="top", fill="x")
+        self.command_frame.grid_columnconfigure(1, weight=1)
+        self._toggle_command(collapse=True)
+        
     def _create_toolbar(self):
         self.toolbar = ttk.Frame(self)
         self.toolbar.pack(side="top", fill="x", padx=8)

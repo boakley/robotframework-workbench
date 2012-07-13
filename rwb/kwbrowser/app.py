@@ -10,7 +10,7 @@ import Tkinter as tk
 import tkFileDialog, tkMessageBox
 import ttk
 from rwb.widgets import Statusbar
-from rwb.lib import AbstractRwbApp
+from rwb.lib import AbstractRwbGui
 from kwbrowser import KwBrowser
 
 NAME="kwbrowser"
@@ -22,10 +22,10 @@ DEFAULT_SETTINGS={
         }
 }
 
-class KwBrowserApp(AbstractRwbApp):
+class KwBrowserApp(AbstractRwbGui):
     '''A Tkinter application that wraps the browser frame'''
     def __init__(self, *args, **kwargs):
-        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
+        AbstractRwbGui.__init__(self, NAME, DEFAULT_SETTINGS)
         self.working_set = sys.argv[1:]
 
         self.wm_title("Keyword Browser - Robot Framework Workbench")

@@ -1,7 +1,7 @@
 import ttk
 import Tkinter as tk
 from rwb.runner.log import RobotLogTree, RobotLogMessages
-from rwb.lib import AbstractRwbApp
+from rwb.lib import AbstractRwbGui
 from rwb.widgets import Statusbar
 
 from rwb.runner.listener import RemoteRobotListener
@@ -14,9 +14,9 @@ DEFAULT_SETTINGS = {
         }
     }
 
-class MonitorApp(AbstractRwbApp):
+class MonitorApp(AbstractRwbGui):
     def __init__(self):
-        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
+        AbstractRwbGui.__init__(self, NAME, DEFAULT_SETTINGS)
         self.wm_geometry("900x500")
         port = self.get_setting("monitor.port")
         print "using port", port
@@ -25,8 +25,6 @@ class MonitorApp(AbstractRwbApp):
         self._create_menubar()
         self._create_statusbar()
         self._create_notebook()
-#        self.label = tk.Label(self, text="port: %s" % self.listener.port, anchor="w")
-#        self.label.pack(padx=4, pady=4, fill="x")
         self.stack = []
         self.event_id = 0
 #        self.status_label.configure(text="port: %s" % self.listener.port)

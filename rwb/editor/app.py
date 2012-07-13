@@ -11,7 +11,7 @@ import platform
 import subprocess
 from rwb.widgets import CollapsibleFrame
 from rwb.runner import RobotController
-from rwb.lib import AbstractRwbApp
+from rwb.lib import AbstractRwbGui
 from rwb.widgets import Statusbar
 from rwb.widgets import SearchEntry
 from rwb.widgets import ToolButton
@@ -54,9 +54,9 @@ DEFAULT_SETTINGS = {
 DOCDIR = r'\\chiprodfs01\talos\Documentation'
 MIN_FONT_SIZE = 8
 
-class EditorApp(AbstractRwbApp, EditorAPI):
+class EditorApp(AbstractRwbGui, EditorAPI):
     def __init__(self):
-        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
+        AbstractRwbGui.__init__(self, NAME, DEFAULT_SETTINGS)
         EditorAPI.__init__(self)
 
         self.extensions = {}
@@ -190,7 +190,7 @@ class EditorApp(AbstractRwbApp, EditorAPI):
 
     def _create_command_window(self):
         self.command_window = CollapsibleFrame(self, title="robot command line")
-        self.command_window.pack(side="top", fill="x")
+#        self.command_window.pack(side="top", fill="x")
 
     def _create_toolbar(self):
         self.toolbar = ttk.Frame(self)

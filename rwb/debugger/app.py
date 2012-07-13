@@ -4,7 +4,7 @@ import xmlrpclib
 import re
 from SimpleXMLRPCServer import SimpleXMLRPCServer, SimpleXMLRPCRequestHandler
 from rwb.runner import RobotLogTree, RobotLogMessages
-from rwb.lib import AbstractRwbApp
+from rwb.lib import AbstractRwbGui
 from rwb.widgets import Statusbar
 from varlist import VariableList
 from rwb.runner.listener import JSONSocketServer
@@ -18,9 +18,10 @@ DEFAULT_SETTINGS = {
         }
     }
 
-class DebuggerApp(AbstractRwbApp):
+class DebuggerApp(AbstractRwbGui):
     def __init__(self):
-        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS)
+        import sys; sys.stdout=sys.__stdout__
+        AbstractRwbGui.__init__(self, NAME, DEFAULT_SETTINGS)
         port = int(self.get_setting("debugger.port"))
         self.listener = JSONSocketServer(self, port=port, callback=self._listen)
         self.wm_title("rwb." + NAME)
@@ -95,7 +96,7 @@ class DebuggerApp(AbstractRwbApp):
             self.log.debug("on_exit caught an error: %s" % str(e))
             # I probably should log something...
             pass
-        AbstractRwbApp.on_exit(self, *args)
+        AbstractRwbGui.on_exit(self, *args)
         self.destroy()
         
     def _create_toolbar(self):

@@ -26,47 +26,13 @@ from rwb.lib.colors import ColorScheme
 from rwb.lib.fonts import FontScheme
 from rwb.widgets import SettingsDialog
 
-class AbstractRwbApp(tk.Tk):
-    '''Base class for all workbench GUI applications'''
-    class DefaultArgs(object): pass
-    def __init__(self, name, default_settings, args=DefaultArgs()):
+class AbstractRwbApp(object):
+    def __init__(self, name, default_settings, args=None):
         self._initialize_logging(name)
-        tk.Tk.__init__(self)
         self.args = args
         self.name = name
-        self.settings_dialog = None
         self._save_settings_job = None
         self._initialize_settings(name, default_settings)
-        self._restore_geometry()
-        self._initialize_themes()
-        self._settings_frames = []
-
-        # The "rwbapp" bindtag exists so that we can do some
-        # teardown when this window closes. This is marginally
-        # easier than binding to "."
-        self.bindtags(self.bindtags() + ("rwbapp",))
-        self.bind_class("rwbapp", "<Destroy>", self.on_exit)
-
-    def register(self, class_):
-        '''Register a class with the application
-
-        Right now the only type of class that can be registered is
-        a sublcass of AbstractSettingsFrame
-        '''
-        if AbstractSettingsFrame in class_.__bases__:
-            self._settings_frames.append(class_)
-        else:
-            raise Exception("register: unexpected object:" + str(class_))
-
-    def _initialize_themes(self):
-        self.colors = ColorScheme()
-        self.fonts = FontScheme()
-        s = ttk.Style()
-        s.configure("Toolbutton", anchor="c")
-        # toplevel widgets don't use the ttk themes. This frame acts
-        # as a themed background for the app as a whole.
-        background=ttk.Frame(self)
-        background.place(x=0, y=0, relwidth=1, relheight=1)
 
     def _initialize_logging(self, name):
         
@@ -86,25 +52,6 @@ class AbstractRwbApp(tk.Tk):
         self.log.setLevel(log_level)
         self.log.addHandler(handler)
         self.log.propagate = False
-        
-    def on_exit(self, *args):
-        try:
-            geometry = self.wm_geometry()
-            self.set_setting("%s.geometry" % self.name, self.wm_geometry())
-            try:
-                self.save_settings(now=True)
-            except Exception, e:
-                self.log.debug("error saving settings: %s", str(e))
-        except Exception, e:
-            self.log.debug("error in on_exit handler:", str(e))
-
-    def show_settings_dialog(self):
-        if self.settings_dialog is None:
-            self.settings_dialog = SettingsDialog(self)
-        self.settings_dialog.show()
-
-    def get_settings_frames(self):
-        return self._settings_frames
 
     def get_setting(self, key, default=None):
         '''Return a setting for the given key
@@ -180,6 +127,62 @@ class AbstractRwbApp(tk.Tk):
             self.log.debug("Settings: %s", self.settings)
         else:
             self.log.debug("no settings file found.")
+
+class AbstractRwbGui(AbstractRwbApp, tk.Tk):
+    '''Base class for all workbench GUI applications'''
+    def __init__(self, name, default_settings, args=None):
+        AbstractRwbApp.__init__(self, name, default_settings, args)
+        tk.Tk.__init__(self)
+        self.settings_dialog = None
+        self._restore_geometry()
+        self._initialize_themes()
+        self._settings_frames = []
+
+        # The "rwbapp" bindtag exists so that we can do some
+        # teardown when this window closes. This is marginally
+        # easier than binding to "."
+        self.bindtags(self.bindtags() + ("rwbapp",))
+        self.bind_class("rwbapp", "<Destroy>", self.on_exit)
+
+    def register(self, class_):
+        '''Register a class with the application
+
+        Right now the only type of class that can be registered is
+        a sublcass of AbstractSettingsFrame
+        '''
+        if AbstractSettingsFrame in class_.__bases__:
+            self._settings_frames.append(class_)
+        else:
+            raise Exception("register: unexpected object:" + str(class_))
+
+    def _initialize_themes(self):
+        self.colors = ColorScheme()
+        self.fonts = FontScheme()
+        s = ttk.Style()
+        s.configure("Toolbutton", anchor="c")
+        # toplevel widgets don't use the ttk themes. This frame acts
+        # as a themed background for the app as a whole.
+        background=ttk.Frame(self)
+        background.place(x=0, y=0, relwidth=1, relheight=1)
+
+    def on_exit(self, *args):
+        try:
+            geometry = self.wm_geometry()
+            self.set_setting("%s.geometry" % self.name, self.wm_geometry())
+            try:
+                self.save_settings(now=True)
+            except Exception, e:
+                self.log.debug("error saving settings: %s", str(e))
+        except Exception, e:
+            self.log.debug("error in on_exit handler:", str(e))
+
+    def show_settings_dialog(self):
+        if self.settings_dialog is None:
+            self.settings_dialog = SettingsDialog(self)
+        self.settings_dialog.show()
+
+    def get_settings_frames(self):
+        return self._settings_frames
 
     def _restore_geometry(self):
         geometry = self.get_setting("%s.geometry" % self.name)

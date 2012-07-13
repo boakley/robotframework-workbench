@@ -1,9 +1,5 @@
 import ttk
 import Tkinter as tk
-import SocketServer
-import StringIO
-import Tkinter as tk
-import json
 from rwb.runner.log import RobotLogTree, RobotLogMessages
 from rwb.lib import AbstractRwbApp
 from rwb.widgets import Statusbar

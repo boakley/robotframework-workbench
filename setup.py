@@ -12,7 +12,6 @@ setup(
     license          ='Apache License 2.0',
     description      ='Tools for working with the robotframework testing framework',
     long_description = open('README.txt').read(),
-    platform         = "any",
     classifiers      = [
         "Development Status :: 2 - Pre-Alpha",
         "License :: OSI Approved :: Apache Software License",
@@ -28,6 +27,8 @@ setup(
         'rwb.editor', 
         'rwb.runner', 
         'rwb.kwbrowser', 
+        'rwb.debugger',
+        'rwb.logviewer',
         'rwb.images', 
         'rwb.lib'
         ],

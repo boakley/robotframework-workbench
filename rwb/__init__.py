@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 from rwb.runner.socket_listener import socket_listener
 from rwb.lib.debuglibrary import DebugLibrary

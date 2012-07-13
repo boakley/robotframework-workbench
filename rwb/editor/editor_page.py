@@ -154,11 +154,13 @@ class EditorPage(tk.Frame):
 #                                  highlightthickness=0,
 #                                  textvariable = self._name_var)
 )
-        self.close_button = tk.Button(self.nameframe, text="close [x]", 
+        self.close_button = tk.Button(self.nameframe, text="[x]", 
                                       borderwidth=1, relief="raised",
                                       highlightthickness=0,
                                       foreground="black",
                                       command=lambda: self.dte.event_generate("<<Close>>"))
+        # it's busted; might as well disable it for now.
+        self.close_button.configure(state="disabled")
         self.nameentry.configure(text=self.name)
 #        self.nameentry.insert(0, self.name)
 #        self.nameentry.pack(fill="both", expand="True")

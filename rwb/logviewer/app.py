@@ -2,7 +2,7 @@ import sys
 import os
 import Tkinter as tk
 import ttk
-from rwb.lib import AbstractRwbApp
+from rwb.lib import AbstractRwbGui
 from rwb.widgets import Statusbar, ToolButton
 from rwb.lib.configobj import ConfigObj
 from logviewer import LogTree
@@ -15,11 +15,11 @@ DEFAULT_SETTINGS = {
     NAME: {}
 }
 
-class LogViewerApp(AbstractRwbApp):
+class LogViewerApp(AbstractRwbGui):
     def __init__(self):
         args = self._parse_args()
 
-        AbstractRwbApp.__init__(self, NAME, DEFAULT_SETTINGS, args)
+        AbstractRwbGui.__init__(self, NAME, DEFAULT_SETTINGS, args)
 
         self._create_menubar()
         self._create_toolbar()

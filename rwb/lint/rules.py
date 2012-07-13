@@ -25,6 +25,10 @@ class Rule(object):
 # pertain only to test cases, or only pertain to test suites
 class TestCaseRule(Rule): pass
 class TestSuiteRule(Rule): pass
+#class ResourceFileRule(Rule): pass
+
+#class RequireResourceDocs(ResourceFileRule):
+#    pass
 
 class RequireTagsRule(TestCaseRule):
     '''Verify that there is at least one tag associated with the test case'''

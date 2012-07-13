@@ -2,7 +2,12 @@ from robot.parsing.model import TestCaseFile, TestDataDirectory, TestCase, UserK
 
 from rules import TestSuiteRule, TestCaseRule
 
-class RobotChecker(object):
+class LintController(object):
+    '''A class which recursively applies rules against a test suite and its tests and keywords
+
+    To use this class, create an instance and then call check(), passing it a reference to
+    a robot.parsing.model.TestCaseFile or TestDataDirectory
+    '''
         
     def check(self, suite):
         '''Run all rules against the given suite and its children'''

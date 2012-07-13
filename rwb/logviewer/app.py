@@ -40,8 +40,6 @@ class LogViewerApp(AbstractRwbGui):
             self.after_idle(self.after, 1, lambda path=self.args.file: self.open(path))
 #            self.after_idle(self.after, 1, lambda path=sys.argv[1]: self.open(path))
 
-        self.wm_geometry("1000x800")
-
     def _parse_args(self):
         '''Parse command line arguments'''
         parser = argparse.ArgumentParser(prog="rwb.logviewer")

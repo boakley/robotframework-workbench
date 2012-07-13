@@ -359,12 +359,19 @@ class EditorPage(tk.Frame):
             raise Exception("nothing to load")
 
         self.dte.delete(1.0, "end")
-        if path.startswith("http:") or path.startswith("https:"):
-            f = urllib2.urlopen(self.path)
-        else:
-            f = open(self.path, "rU")
-        data = f.read().replace("\r\n", "\n")
-        f.close()
+        data = ""
+        try:
+            if path.startswith("http:") or path.startswith("https:"):
+                f = urllib2.urlopen(self.path)
+                data = f.read().replace("\r\n", "\n")
+                f.close()
+            else:
+                if os.path.exists(self.path) or True:
+                    f = open(self.path, "rU")
+                    data = f.read().replace("\r\n", "\n")
+                    f.close()
+        except Exception, e:
+            self.app.log.debug("error opening '%s': %s" % (self.path, str(e)))
 
         # hmmm; this will cause problems if the very last line
         # of a file ends in backspace-space. What's the

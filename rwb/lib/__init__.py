@@ -21,6 +21,6 @@ from keywordtable import KeywordTable
 from colors import ColorScheme
 from fonts import FontScheme
 from settings_frame import AbstractSettingsFrame
-from rwbapp import AbstractRwbApp
+from rwbapp import AbstractRwbApp, AbstractRwbGui
 
 

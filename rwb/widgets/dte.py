@@ -197,7 +197,8 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         '''
         lines = []
         for row in rows:
-            data = "| " + " | ".join(row)
+            data = " | ".join(row)
+            data = "|" + data if data.startswith(" ") else "| " + data
             lines.append(data.rstrip())
         return "\n".join(lines)
 

@@ -215,6 +215,36 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         self.tag_add("sel", "sel_start", "sel_end")
         self.mark_unset("sel_start")
         
+    def get_current_statement(self):
+        
+        '''Return the current statement as a list of cells
+
+        This doesn't do it exactly like robot does, but it's
+        close enough for now. 
+        '''
+        text = self.get_current_statement_text()
+        lines = text.split("\n")
+        statement = self._split_row(lines[0])
+        for line in lines[1:]:
+            # robot requires a leading pipe; make sure there is one,
+            # otherwise it will split on whitespace. Yuck.
+            
+            line = line.strip(" ")
+            if not line.startswith("|"):
+                line = "| " + line
+            row = self._split_row(line)
+            # we're relying on the fact that in standard robot
+            # format for continuation lines, the first cell will
+            # be blank, and the next cell will contain "..."
+            statement.extend(row[2:])
+        return statement
+
+    def get_current_statement_text(self):
+        start = self.find_start_of_statement()
+        end = self.find_end_of_statement()
+        text = self.get(start, end)
+        return text
+
     def get_lines(self, start="1.0", end="end"):
         '''Generator which returns all whole lines from start to end
         

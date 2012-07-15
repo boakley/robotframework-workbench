@@ -11,20 +11,20 @@ class DteMargin(tk.Canvas):
     '''A widget to display line numbers and markers for a DynamicTableEditor widget'''
     def __init__(self, *args, **kwargs):
         tk.Canvas.__init__(self, *args, **kwargs)
-        self.text = None
+        self.dte = None
         self.bind("<ButtonPress-1>", self._on_linenumber_click)
         self.bind("<Control-ButtonPress-1>", self._on_linenumber_control_click)
         self.bind("<Shift-ButtonPress-1>", self._on_linenumber_move)
         self.bind("<B1-Motion>", self._on_linenumber_move)
         
-    def attach(self, text):
+    def attach(self, dte):
         '''Attach to a dte widget'''
-        text.margin = self
-        padding = int(text.cget("padx")) + int(self.cget("width"))
-        text.configure(padx=padding)
-        self.place(x=-padding,y=0, relheight=1.0, in_=text)
-        self.text = text
-        self.text.add_post_change_hook(lambda *args: self.refresh())
+        self.dte = dte
+        self.dte.margin = self
+        padding = int(self.dte.cget("padx")) + int(self.cget("width"))
+        self.dte.configure(padx=padding)
+        self.place(x=-padding,y=0, relheight=1.0, in_=self.dte)
+        self.dte.add_post_change_hook(lambda *args: self.refresh())
 
     def refresh(self):
         '''Refresh line numbers and markers'''
@@ -32,13 +32,13 @@ class DteMargin(tk.Canvas):
         self.update_markers()
         
     def _get_linenumber(self, index):
-        return int(self.text.index(index).split(".")[0])
+        return int(self.dte.index(index).split(".")[0])
 
     def update_markers(self, *args):
         '''This creates a marker which represents the current statement'''
-        current_line = self.text.index("insert").split(".")[0]
-        start = self.text.find_start_of_statement("insert")
-        end = self.text.find_end_of_statement("insert")
+        current_line = self.dte.index("insert").split(".")[0]
+        start = self.dte.find_start_of_statement("insert")
+        end = self.dte.find_end_of_statement("insert")
         self.set_marker(start, end)
             
     def set_marker(self, start, end):
@@ -62,14 +62,14 @@ class DteMargin(tk.Canvas):
         self.delete("all")
         window_height = self.winfo_height()
         window_width = self.winfo_width()
-        first = int(self.text.index("@0,0").split(".")[0])
-        last = int(self.text.index("@0,%s"%window_height).split(".")[0])
+        first = int(self.dte.index("@0,0").split(".")[0])
+        last = int(self.dte.index("@0,%s"%window_height).split(".")[0])
         self.create_line(0, 1, 0, window_height, fill="gray", tags=("border",))
         self.create_line(window_width-1, 1, window_width-1, window_height, fill="gray", tags=("border",))
-        bg = self.text.cget("background")
+        bg = self.dte.cget("background")
         markerx = window_width-3
         for i in range(first, last+1):
-            dline= self.text.dlineinfo("%s.0" % i)
+            dline= self.dte.dlineinfo("%s.0" % i)
             if dline is None: break
             y = dline[1]
             last_id = self.create_text(window_width-8,y,anchor="ne", text=str(i))
@@ -95,30 +95,30 @@ class DteMargin(tk.Canvas):
         self.tag_add("w00t", start, "%s lineend+1c" % end)
 
     def _on_linenumber_control_click(self, event):
-        text_index = self.text.index("@%s,%s" % (event.x, event.y))
-        self.text.mark_set("click", "%s linestart" % text_index)
-        self.text.tag_add("sel", "%s linestart" % text_index, "%s lineend+1c" % text_index)
-        self.text.mark_set("insert", "%s linestart" % text_index)
+        text_index = self.dte.index("@%s,%s" % (event.x, event.y))
+        self.dte.mark_set("click", "%s linestart" % text_index)
+        self.dte.tag_add("sel", "%s linestart" % text_index, "%s lineend+1c" % text_index)
+        self.dte.mark_set("insert", "%s linestart" % text_index)
         
     def _on_linenumber_click(self, event):
         try:
-            text_index = self.text.index("@%s,%s" % (event.x, event.y))
-            self.text.mark_set("click", "%s linestart" % text_index)
-            self.text.tag_remove("sel", "1.0", "end")
-            self.text.tag_add("sel", "%s linestart" % text_index, "%s lineend+1c" % text_index)
-            self.text.mark_set("insert", "%s lineend" % text_index)
+            text_index = self.dte.index("@%s,%s" % (event.x, event.y))
+            self.dte.mark_set("click", "%s linestart" % text_index)
+            self.dte.tag_remove("sel", "1.0", "end")
+            self.dte.tag_add("sel", "%s linestart" % text_index, "%s lineend+1c" % text_index)
+            self.dte.mark_set("insert", "%s lineend" % text_index)
         except Exception, e:
             import sys; sys.stdout.flush()
 
     def _on_linenumber_move(self, event):
         try:
-            text_index = self.text.index("@%s,%s" % (event.x, event.y))
-            self.text.tag_remove("sel", "1.0", "end") 
-            if self.text.compare(text_index, ">", "click"):
-                self.text.tag_add("sel", "click", "%s lineend+1c" % text_index)
+            text_index = self.dte.index("@%s,%s" % (event.x, event.y))
+            self.dte.tag_remove("sel", "1.0", "end") 
+            if self.dte.compare(text_index, ">", "click"):
+                self.dte.tag_add("sel", "click", "%s lineend+1c" % text_index)
             else:
-                self.text.tag_add("sel", "%s linestart" % text_index, "click lineend+1c")
-            self.text.mark_set("insert", "%s lineend" % text_index)
+                self.dte.tag_add("sel", "%s linestart" % text_index, "click lineend+1c")
+            self.dte.mark_set("insert", "%s lineend" % text_index)
         except Exception, e:
             pass
 

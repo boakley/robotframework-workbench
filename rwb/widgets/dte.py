@@ -223,6 +223,8 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         close enough for now. 
         '''
         text = self.get_current_statement_text()
+        if not text.lstrip().startswith("|"):
+            text = "| " + text
         lines = text.split("\n")
         statement = self._split_row(lines[0])
         for line in lines[1:]:
@@ -391,7 +393,6 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
             return "break"
 
     def _on_triple_click(self, event):
-      print "on_triple_click..."
       self.select_current_cell()
       return "break"
 

@@ -25,7 +25,6 @@ class DteMargin(tk.Canvas):
 
     def update_markers(self, *args):
         '''Sorry, not quite ready for prime time just yet'''
-        return
         current_line = self.text.index("insert").split(".")[0]
         like_lines = self.text.find_like_rows(current_line)
         bg = self.cget("background")
@@ -33,6 +32,16 @@ class DteMargin(tk.Canvas):
         for i in like_lines:
             self.itemconfigure("marker-%s" % i, outline="blue", fill="blue")
             
+    def set_marker(self, start, end):
+        # start and end may be string indices; make sure they 
+        # represent line numbers
+        start = int(float(start))
+        end=int(float(end))
+        bg = self.cget("background")
+        self.itemconfigure("marker", outline=bg, fill=bg)
+        for i in range(start, end+1):
+            self.itemconfigure("marker-%s" %i, outline="blue", fill="blue")
+
     def update_linenumbers(self, *args):
         '''redraw line numbers for visible lines
 
@@ -57,6 +66,7 @@ class DteMargin(tk.Canvas):
             last_id = self.create_text(window_width-8,y,anchor="ne", text=str(i))
             self.create_rectangle(markerx, y, window_width-2, y+dline[3],
                                   outline=bg, fill=bg, tags=("marker", "marker-%s" % i))
+#                                  outline="pink", fill="orange", tags=("marker", "marker-%s" % i))
             self.create_line(0,y-1, window_width+3, y-1, fill="gray")
         self.lift("border")
         self.update_markers()

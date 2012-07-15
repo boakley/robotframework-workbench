@@ -2,9 +2,8 @@
 
 import Tkinter as tk
 import ttk
-#from core.dte import DynamicTableEditor
-from rwb.widgets import DynamicTableEditor
 from dte_margin import DteMargin
+from robotdte import RobotDTE
 import codecs
 import re
 import os
@@ -186,19 +185,19 @@ class EditorPage(tk.Frame):
         # scrollbars...  if we allow word wrapping we need to turn off
         # the horizontal scrollbar...
         wrap = "none" 
-        self.dte = DynamicTableEditor(self, borderwidth=0,
-                                      insertbackground="#ff0000",
-                                      wrap=wrap,
-                                      insertwidth=1,
-                                      highlightthickness=0,
-                                      tabstyle="wordprocessor",
-                                      undo=True, autoseparators=True,
-                                      tabs = tabwidth*em,
-                                      font=self.app.fonts.fixed)
+        self.dte = RobotDTE(self,
+                            borderwidth=0,
+                            insertbackground="#ff0000",
+                            wrap=wrap,
+                            insertwidth=1,
+                            highlightthickness=0,
+                            tabstyle="wordprocessor",
+                            undo=True, autoseparators=True,
+                            tabs = tabwidth*em,
+                            font=self.app.fonts.fixed)
 
         self.linenumbers = DteMargin(self, background="#f2f2f2",
                                      borderwidth=0,
-#        self.linenumbers = DteMargin(self, borderwidth=0,
                                      highlightthickness=0, width=4*em)
         self.linenumbers.attach(self.dte)
         self.configure(background=self.dte.cget("background"))
@@ -210,11 +209,8 @@ class EditorPage(tk.Frame):
                             orient="horizontal")
         filler = tk.Frame(self, 
                           borderwidth=0, highlightthickness=0, background=self.nameframe.cget("background"))
-#        filler = tk.Frame(self, borderwidth=0, highlightthickness=0)
         self.dte.configure(xscrollcommand=hsb.set, yscrollcommand=self.OnYviewChanged)
-        self.linenumbers.grid(row=1, column=0, sticky="ns", padx=0, pady=4, ipadx=2)
         self.nameframe.grid(row=0, column=0, sticky="nsew", columnspan=3)
-#        filler.grid(row=0, column=0, sticky="nsew", padx=0)
         self.dte.grid(row=1, column=1, sticky="nsew", padx=4, pady=4)
         vsb.grid(row=1, column=2, sticky="ns", pady=(4,0))
         hsb.grid(row=2, column=0, columnspan=2, sticky="ew")
@@ -225,7 +221,6 @@ class EditorPage(tk.Frame):
         self._define_tags()
 
         self.dte.add_post_change_hook(self.OnDTEChange)
-#        self.dte.bind("<Configure>", lambda event: self.draw_line_numbers())
         self.dte.bind("<<AutoComplete>>", self.on_autocomplete)
         self.dte.bind("<*>", self.on_star)
         self.dte.bind("<$>", self._on_dollar)
@@ -463,7 +458,7 @@ class EditorPage(tk.Frame):
         recalculate. I need to figure out how to optimize for that case...
         '''
         result = self.vsb.set(*args)
-        self.linenumbers.update_linenumbers()
+        self.linenumbers.refresh()
         return result
 
     def OnDTEChange(self, *args):
@@ -512,10 +507,8 @@ class EditorPage(tk.Frame):
             self.dte.highlight_pattern(name_pattern, "name", start, end)
         
         number_of_lines = int(float(self.dte.index("end")))-1
-#        self.dte.tag_configure("cell", background="#f0f8ff")
         self.dte.tag_configure("cell", background="pink")
         start_line = int(float(block_start))
         end_line = int(float(block_end))
-        self.linenumbers.update_linenumbers()
 
         self.event_generate("<<FileChanged>>", data="this is bogus")

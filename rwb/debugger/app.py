@@ -8,6 +8,9 @@ from rwb.lib import AbstractRwbGui
 from rwb.widgets import Statusbar
 from varlist import VariableList
 from rwb.runner.listener import JSONSocketServer
+from rwb.widgets import ToolButton
+from keyworddte import KeywordDTE
+#from rwb.editor import DteMargin
 
 NAME = "debugger"
 HELP_URL="https://github.com/boakley/robotframework-workbench/wiki/rwb.debugger-User-Guide"
@@ -35,6 +38,13 @@ class DebuggerApp(AbstractRwbGui):
         self.set_idle_state()
         self.heartbeat()
 
+        self.input.bind("<F5>", self.on_eval)
+        self.input.bind("<Control-Return>", self.on_control_return)
+
+    def on_control_return(self, event):
+        self.on_eval(event)
+        return "break"
+
     def heartbeat(self):
         '''Continually ping remote to see if it is alive
 
@@ -53,6 +63,7 @@ class DebuggerApp(AbstractRwbGui):
         This sets the normal/disabled states of the
         buttons appropriate for the current state
         '''
+        self.input.configure(state="disabled")
         self.continue_button.configure(state="disabled")
         self.stop_button.configure(state="disabled")
         self.fail_button.configure(state="disabled")
@@ -66,6 +77,7 @@ class DebuggerApp(AbstractRwbGui):
         This sets the normal/disabled states of the
         buttons appropriate for the current state
         '''
+        self.input.configure(state="disabled")
         self.continue_button.configure(state="disabled")
         self.stop_button.configure(state="disabled")
         self.fail_button.configure(state="disabled")
@@ -79,6 +91,7 @@ class DebuggerApp(AbstractRwbGui):
         This sets the normal/disabled states of the
         buttons appropriate for the current state
         '''
+        self.input.configure(state="normal")
         self.continue_button.configure(state="normal")
         self.stop_button.configure(state="normal")
         self.fail_button.configure(state="normal")
@@ -103,14 +116,23 @@ class DebuggerApp(AbstractRwbGui):
     def _create_toolbar(self):
         self.toolbar = ttk.Frame(self)
         self.toolbar.pack(side="top", fill="x")
-        self.continue_button = ttk.Button(self.toolbar,text="->", width=8,
+#        self.continue_button = ttk.Button(self.toolbar,text="->", width=8,
+        self.continue_button = ToolButton(self.toolbar, text="->",
+                                          tooltip="continue executing the test", 
                                           command=lambda: self.proxy("resume"))
-        self.stop_button = ttk.Button(self.toolbar, text="stop", width=8,
-                                          command=lambda: self.proxy("stop"))
-        self.fail_button = ttk.Button(self.toolbar, text="fail test", width=8,
-                                          command=lambda: self.proxy("fail"))
+#        self.stop_button = ttk.Button(self.toolbar, text="stop", width=8,
+        self.stop_button = ToolButton(self.toolbar, text="stop", 
+                                      tooltip="Stop the test",
+                                      command=lambda: self.proxy("stop"))
+#        self.fail_button = ttk.Button(self.toolbar, text="fail test", width=8,
+        self.fail_button = ToolButton(self.toolbar, text="fail test", width=9,
+                                      tooltip="fail the current test and continue running",
+                                      command=lambda: self.proxy("fail"))
 
-        self.eval_button = ttk.Button(self.toolbar, text="eval", command=self._on_eval, width=8)
+#        self.eval_button = ttk.Button(self.toolbar, text="eval", command=self.on_eval, width=8)
+        self.eval_button = ToolButton(self.toolbar, text="run keyword", width=10,
+                                      tooltip="run a keyword from the window below",
+                                      command=self.on_eval)
 
         self.continue_button.pack(side="left")
         self.stop_button.pack(side="left")
@@ -134,19 +156,31 @@ class DebuggerApp(AbstractRwbGui):
         except Exception, e:
             print "refresh_vars failed:", e
 
-    def _on_eval(self):
-        code = self._split(self.input.get("insert linestart", "insert lineend"))
-        print "code:", " | ".join(code)
+    def on_eval(self, event=None):
+        statement = self.input.get_current_statement()
+        if len(statement) == 1 and re.match('[\$\@]{.*}\s*$', statement[0]):
+            statement.insert(0, "get variable value")
+
+        try:
+            here = self.input.index("insert")
+            result_index = self.input.index("insert lineend+1c")
+            result = self.proxy("run_keyword", *statement)
+            self.input.insert(result_index, "\n" + str(result) + "\n\n", "result")
+            self.refresh_vars()
+        except Exception, e:
+            self.input.insert(result_index, "\nerror:" + str(e) + "\n\n", ("error", "result"))
+        return "break"
         
-    def proxy(self, command):
+    def proxy(self, command, *args):
         proxy = xmlrpclib.ServerProxy("http://localhost:%s" % self.remote_port,allow_none=True)
         dispatch = {"resume":        proxy.resume,
                     "stop":          proxy.stop,
                     "fail":          proxy.fail,
                     "ping":          proxy.ping,
                     "get_variables": proxy.get_variables,
+                    "run_keyword":   proxy.run_keyword,
                     }
-        return dispatch[command]()
+        return dispatch[command](*args)
 
     def _create_menubar(self):
         self.menubar = tk.Menu(self)
@@ -179,7 +213,8 @@ class DebuggerApp(AbstractRwbGui):
 
     def _create_main(self):
         # one horizontal paned window to hold a tree of suites, tests and keywords
-        # on the left, and the rest of the windows on the right.
+        # on the left, and the rest of the windows on the right. A second, vertical
+        # paned window on the right holds everything else
         hpw = tk.PanedWindow(self, orient="horizontal",
                              borderwidth=0,
                              sashwidth=4, sashpad=0)
@@ -188,16 +223,23 @@ class DebuggerApp(AbstractRwbGui):
                               borderwidth=0,
                               sashwidth=4, sashpad=0)
 
+        em = self.fonts.fixed.measure("M")
         self.log_tree = RobotLogTree(hpw, auto_open=("failed","suite","test","keyword"))
         self.varlist = VariableList(vpw)
-        self.input = tk.Text(vpw, wrap="word", height=4)
+
+        self.input = KeywordDTE(vpw, wrap="word", height=4, highlightthickness=0)
+        padx = self.input.cget("padx")
+        self.input.tag_configure("result", lmargin1=padx+20, lmargin2=padx+20)
+        self.input.tag_configure("error", foreground="#b22222")
         self.log_messages = RobotLogMessages(vpw)
 
         hpw.add(self.log_tree, width=500)
         hpw.add(vpw)
         vpw.add(self.varlist, height=150)
         vpw.add(self.log_messages, height=150)
+        vpw.add(self.toolbar)
         vpw.add(self.input, height=100)
+        self.toolbar.lift(vpw)
         self.listeners = (self.log_tree, self.log_messages)
 
     def reset(self):
@@ -208,7 +250,6 @@ class DebuggerApp(AbstractRwbGui):
 
     def _listen(self, cmd, *args):
         self.event_id += 1
-        self.set_running_state()
 
         for listener in self.listeners:
             listener.listen(self.event_id, cmd, args)
@@ -217,6 +258,9 @@ class DebuggerApp(AbstractRwbGui):
             # our signal that a new test is starting
             self.reset()
             self.set_running_state()
+
+        if cmd == "ready":
+            self.set_break_state()
 
         if cmd == "log_message":
             attrs = args[0]
@@ -271,7 +315,6 @@ class InputWindow(tk.Text):
                 row = row[1:]
 
             cells.extend(self._pipe_splitter.split(row))
-        print "=>", " | ".join(row)
         return cells
 
         

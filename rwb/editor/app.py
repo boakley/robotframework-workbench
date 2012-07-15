@@ -552,8 +552,6 @@ class EditorApp(AbstractRwbGui, EditorAPI):
         self.menubar.add_cascade(label="View", menu=view_menu)
 
         table_menu = tk.Menu(self.menubar, tearoff=False)
-        table_menu.add_command(label="Select similar rows", command=self._on_select_similar_rows)
-        table_menu.add_separator()
         table_menu.add_command(label="Align Columns", command=self._on_align_columns)
         table_menu.add_command(label="Compress Columns", command=self._on_compress_columns)
 
@@ -642,10 +640,6 @@ class EditorApp(AbstractRwbGui, EditorAPI):
             os.system(cmd + "&")
         return "break"
 
-    def _on_select_similar_rows(self):
-        current_editor = self.get_current_editor()
-        current_editor.select_similar_rows()
-        
     def _on_align_columns(self):
         current_editor = self.get_current_editor()
         current_editor.align_columns()

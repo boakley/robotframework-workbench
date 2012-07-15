@@ -147,12 +147,6 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         except:
             return "WTF?"
 
-    def select_similar_rows(self, index="insert"):
-        linenum = int(self.index("insert").split(".")[0])
-        rows = self.find_like_rows(linenum)
-        self.tag_remove("sel", 1.0, "end")
-        self.tag_add("sel", "%s.0" % rows[0], "%s.0 lineend" % rows[-1])
-
     def get_selected_rows(self):
         '''Return all of the data for all lines that contain the selection
 
@@ -220,37 +214,6 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         self.tag_add("sel", "sel_start", "sel_end")
         self.mark_unset("sel_start")
         
-    def find_like_rows(self, linenumber):
-        '''Find rows with the same number of columns
-
-        Remarkably, this is pretty fast. About 1ms the last time I timed it
-
-        Admittedly, the algorithm is pretty clunky and could stand for some optimization
-        '''
-        start = end = anchor = int(linenumber)
-        row = self.get_row(linenumber)
-        if len(row) == 1 and row[0] == "":
-            self.tag_remove("like", "1.0", "end")
-            self.tag_add("like", "%s.0 linestart" % linenumber, "%s.0 lineend+1c" % linenumber)
-            return (anchor,)
-        required_rows = len(row)
-        for linenumber in range(anchor-1, 0, -1):
-            row = self.get_row(linenumber)
-            if len(row) != required_rows or (len(row) == 1 and row[0] == ""):
-                break
-            start = linenumber
-
-        lastline = int(self.index("end").split(".")[0])
-        for linenumber in range(anchor+1, lastline):
-            row = self.get_row(linenumber)
-            if len(row) != required_rows or (len(row) == 1 and row[0] == ""):
-                break
-            end = linenumber
-
-        self.tag_remove("like", "1.0", "end")
-        self.tag_add("like", "%s.0 linestart" % start, "%s.0 lineend+1c" % end)
-        return range(start, end+1)
-    
     def get_lines(self, start="1.0", end="end"):
         '''Generator which returns all whole lines from start to end
         
@@ -492,8 +455,6 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
             self.edit_separator()
             return "break"
 
-    ### auto complete stuff
-
     def _on_click(self, event):
         try:
             if self.complete_frame.winfo_viewable():
@@ -516,7 +477,6 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
             self.event_generate("<<AutoComplete>>")
             
         line = self.index("insert").split(".")[0]
-        self.find_like_rows(line)
 
     def _on_any_key(self, event):
         if self.complete_frame.winfo_viewable():

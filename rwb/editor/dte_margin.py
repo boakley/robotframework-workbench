@@ -88,6 +88,12 @@ class DteMargin(tk.Canvas):
                 self.configure(width=(window_width + abs(bbox[0]) + 4))
                 self.after(1, self.update_linenumbers, False)
 
+    def mark_current_statement(self):
+        start = self.find_start_of_statement("insert")
+        end = self.find_end_of_statement("insert")
+        self.tag_remove("w00t", 1.0, "end")
+        self.tag_add("w00t", start, "%s lineend+1c" % end)
+
     def _on_linenumber_control_click(self, event):
         text_index = self.text.index("@%s,%s" % (event.x, event.y))
         self.text.mark_set("click", "%s linestart" % text_index)

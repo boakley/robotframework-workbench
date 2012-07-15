@@ -110,6 +110,11 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
     def current_row_number(self):
         return self.index("insert").split(".")[0]
 
+    def get_row_number(self, index):
+        '''Return the row number for a given index'''
+        linenum = int(self.index(index).split(".")[0])
+        return linenum
+
     def set_completion_choices(self, choices):
         self.list.delete(0, "end")
         for string in choices:
@@ -246,7 +251,8 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         return result
 
     def get_row(self, linenumber):
-        '''Return a row as a list of values
+        '''Return a row as a list of values. The values will be 
+           stripped of leading and trailing whitespace
 
         This replicates the functionality of robot.parsing.txtreader.split_row
         in robot 2.7 (which isn't officially out yet...)

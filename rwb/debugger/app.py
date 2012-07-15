@@ -116,20 +116,16 @@ class DebuggerApp(AbstractRwbGui):
     def _create_toolbar(self):
         self.toolbar = ttk.Frame(self)
         self.toolbar.pack(side="top", fill="x")
-#        self.continue_button = ttk.Button(self.toolbar,text="->", width=8,
         self.continue_button = ToolButton(self.toolbar, text="->",
                                           tooltip="continue executing the test", 
                                           command=lambda: self.proxy("resume"))
-#        self.stop_button = ttk.Button(self.toolbar, text="stop", width=8,
         self.stop_button = ToolButton(self.toolbar, text="stop", 
                                       tooltip="Stop the test",
                                       command=lambda: self.proxy("stop"))
-#        self.fail_button = ttk.Button(self.toolbar, text="fail test", width=8,
         self.fail_button = ToolButton(self.toolbar, text="fail test", width=9,
                                       tooltip="fail the current test and continue running",
                                       command=lambda: self.proxy("fail"))
 
-#        self.eval_button = ttk.Button(self.toolbar, text="eval", command=self.on_eval, width=8)
         self.eval_button = ToolButton(self.toolbar, text="run keyword", width=10,
                                       tooltip="run a keyword from the window below",
                                       command=self.on_eval)
@@ -197,7 +193,6 @@ class DebuggerApp(AbstractRwbGui):
     def _on_view_help(self):
         import webbrowser
         webbrowser.open(HELP_URL)
-#        page = self.notebook.add_custom_page(page_class=help.HelpPage)
 
     def _create_statusbar(self):
         self.statusbar = Statusbar(self)

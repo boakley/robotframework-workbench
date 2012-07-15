@@ -111,6 +111,23 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
     def current_row_number(self):
         return self.index("insert").split(".")[0]
 
+    def find_start_of_statement(self, index="insert"):
+        '''This can be overridden by a subclass to do something more interesting
+
+        For example, when building an editor for a robotframework test
+        case, it could look up for the first line that is not a
+        continuation line
+        '''
+        return self.index("%s linestart" % index)
+
+    def find_end_of_statement(self, index="insert", mark="w00t"):
+        '''This can be overridden by a subclass to do something more interesting
+
+        For example, when building an editor for a robotframework test
+        case, it could look down for additional continuation lines.
+        '''
+        return self.index("%s lineend" % index)
+
     def get_row_number(self, index):
         '''Return the row number for a given index'''
         linenum = int(self.index(index).split(".")[0])

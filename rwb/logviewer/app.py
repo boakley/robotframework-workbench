@@ -173,7 +173,6 @@ class LogViewerApp(AbstractRwbGui):
             self.viewer.refresh(path)
             self.wm_title("%s - Robot Framework Workbench Log Viewer" % path)
         except Exception, e:
-            print "WTF?", e
             tkMessageBox.showwarning("Unable to open the file\n\n%s" % str(e))
             self.wm_title("Robot Framework Workbench Log Viewer")
 
@@ -202,7 +201,6 @@ class LogViewerApp(AbstractRwbGui):
         self.wm_withdraw()
         self.update()
         self.destroy()
-
 
 if __name__ == "__main__":
     app = LogViewerApp()

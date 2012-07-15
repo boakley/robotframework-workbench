@@ -82,6 +82,7 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         # to the next line
 
         self.tag_configure("current_line", background="#f2f2f2")
+        self.tag_raise("sel", "current_line")
 
         # since we automatically add a space after an inserted pipe,
         # we want to ignore a space that immediately follows since

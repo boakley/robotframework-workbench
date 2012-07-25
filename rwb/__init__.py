@@ -18,8 +18,8 @@ limitations under the License.
 
 __version__ = "0.4.0"
 
-from rwb.runner.socket_listener import socket_listener
-from rwb.lib.debuglibrary import DebugLibrary
+from rwb.misc import socket_listener
+from rwb.misc import DebugLibrary
 
 # these will be set by the app after Tkinter is initialized
 FONT_SCHEME = None

@@ -1,3 +1,7 @@
+'''
+Robotframework test debugger
+'''
+
 import Tkinter as tk
 import ttk
 import xmlrpclib
@@ -40,23 +44,21 @@ class DebuggerApp(AbstractRwbGui):
 
         self.input.bind("<F5>", self.on_eval)
         self.input.bind("<Control-Return>", self.on_control_return)
+        self._count = 0
 
     def on_control_return(self, event):
+        '''Handle <control-return> in the text widget 
+        by evaluating the current statement
+        '''
         self.on_eval(event)
         return "break"
 
     def heartbeat(self):
-        '''Continually ping remote to see if it is alive
-
-        This, to reset the state in case the remote process
-        dies on us or becomes unresponsive.
-        '''
-        try:
-            self.proxy("ping")
-        except Exception, e:
+        '''Monitor the existence of a remote connection'''
+        if not self.listener.has_clients():
             self.set_idle_state()
         self.after(2000, self.heartbeat)
-        
+
     def set_idle_state(self):
         '''Set the app state to idle
 
@@ -124,7 +126,7 @@ class DebuggerApp(AbstractRwbGui):
                                       command=lambda: self.proxy("stop"))
         self.fail_button = ToolButton(self.toolbar, text="fail test", width=9,
                                       tooltip="fail the current test and continue running",
-                                      command=lambda: self.proxy("fail"))
+                                      command=lambda: self.proxy("fail_test"))
 
         self.eval_button = ToolButton(self.toolbar, text="run keyword", width=10,
                                       tooltip="run a keyword from the window below",
@@ -137,6 +139,7 @@ class DebuggerApp(AbstractRwbGui):
         self.eval_button.pack(side="left")
 
     def refresh_vars(self):
+        '''Refresh the list of variables'''
         self.varlist.reset()
         try:
             variables = self.proxy("get_variables")
@@ -144,15 +147,16 @@ class DebuggerApp(AbstractRwbGui):
                 # for reasons I don't yet understand, backslashes are getting interpreted
                 # as escape sequences. WTF?
                 try:
-                    value = variables[key]
+                    value = str(variables[key])
                     value = value.replace("\\", "\\\\")
                 except: 
                     pass
                 self.varlist.add(key, value)
         except Exception, e:
-            print "refresh_vars failed:", e
+            self.log.warn("refresh_vars failed: %s", str(e))
 
     def on_eval(self, event=None):
+        '''Evaluate the current statement'''
         statement = self.input.get_current_statement()
         if len(statement) == 1 and re.match('[\$\@]{.*}\s*$', statement[0]):
             statement.insert(0, "get variable value")
@@ -168,11 +172,13 @@ class DebuggerApp(AbstractRwbGui):
         return "break"
         
     def proxy(self, command, *args):
+        '''Forward a command to the remote test'''
         proxy = xmlrpclib.ServerProxy("http://localhost:%s" % self.remote_port,allow_none=True)
         dispatch = {"resume":        proxy.resume,
                     "stop":          proxy.stop,
-                    "fail":          proxy.fail,
+                    "fail_test":     proxy.fail_test,
                     "ping":          proxy.ping,
+                    "ready":         proxy.ready,
                     "get_variables": proxy.get_variables,
                     "run_keyword":   proxy.run_keyword,
                     }
@@ -236,6 +242,7 @@ class DebuggerApp(AbstractRwbGui):
         vpw.add(self.input, height=100)
         self.toolbar.lift(vpw)
         self.listeners = (self.log_tree, self.log_messages)
+#        self.listeners = (self.log_messages,)
 
     def reset(self):
         '''Reset all of the windows to their initial state'''
@@ -246,18 +253,20 @@ class DebuggerApp(AbstractRwbGui):
     def _listen(self, cmd, *args):
         self.event_id += 1
 
+        self.log.debug("in _listen: %s %s", cmd, str(args))
         for listener in self.listeners:
             listener.listen(self.event_id, cmd, args)
-
+        
         if cmd == "pid":
             # our signal that a new test is starting
             self.reset()
             self.set_running_state()
 
         if cmd == "ready":
-            self.set_break_state()
+            self.set_running_state()
 
         if cmd == "log_message":
+            self.set_running_state()
             attrs = args[0]
             if attrs["level"] == "DEBUG":
                 if attrs["message"].strip().startswith(":break:"):
@@ -265,6 +274,7 @@ class DebuggerApp(AbstractRwbGui):
                     self.remote_port = attrs["message"].split(":")[2]
                     self.log.debug("remote port=%s" % self.remote_port)
                     self.set_break_state()
+                    self.proxy("ready")
                     self.refresh_vars()
 
         if cmd in ("start_test", "start_suite", "start_keyword"):
@@ -272,14 +282,18 @@ class DebuggerApp(AbstractRwbGui):
             cmd_type = cmd.split("_")[1]
             self.stack.append((cmd_type, name))
             self.update_display()
+            self.set_running_state()
 
         elif cmd in ("end_test", "end_suite", "end_keyword"):
             cmd_type = cmd.split("_")[1]
             self.stack.pop()
             self.update_display()
+            self.set_running_state()
 
         elif cmd == "close":
             self.set_idle_state()
+
+        self.log.debug("out _listen: %s %s", cmd, str(args))
 
     def update_display(self):
         '''Refresh all of the status information in the GUI'''

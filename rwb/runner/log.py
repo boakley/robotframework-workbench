@@ -103,6 +103,7 @@ class RobotLogTree(tk.Frame):
     '''Provides a tree view for suite, test and keyword results'''
     def __init__(self, parent, auto_open=None):
         self._init_images()
+        self._last_node = ""
         self.autoscroll=True
         # auto_open is a list of one or more of the following:
         # "failed" - auto open all ancestors of a failed keyword
@@ -163,13 +164,14 @@ class RobotLogTree(tk.Frame):
         if name in dispatch:
             starting_yview = self.tree.yview()
             dispatch[name](event_id, *args)
-            self.update_idletasks()
             # this autoscrolling is flakey and I don't know why. I 
             # think there may be a timing issue with the treeview because
             # this strategy of checking the yview has worked for me in
             # the past with other widgets.
-            if self.autoscroll and (starting_yview[1] >= 1.0):
-                self.tree.yview("moveto", "1.0")
+#            self.update_idletasks()
+#            if self.autoscroll and (starting_yview[1] >= 1.0):
+#                self.tree.yview("moveto", "1.0")
+            self.tree.yview("moveto", "1.0")
 
     def _init_images(self):
         self._image = {
@@ -182,6 +184,14 @@ class RobotLogTree(tk.Frame):
         item=self.tree.selection()[0]
         self.event_generate("<<EventSelected>>")
 
+    def _insert(self, parent, index, *args, **kwargs):
+        node = self.tree.insert(parent, index, *args, **kwargs)
+        self._last_node = node
+        # FIXME: I should only be doing this if the user hasn't
+        # scrolled back.
+        self.tree.yview("moveto", "1.0")
+        return node
+        
     # the following methods accept the same arguments as traditional robot
     # listeners, except there's an additional first argument that is a 
     # unique id for this event (useful to associate objects in one listener
@@ -190,9 +200,9 @@ class RobotLogTree(tk.Frame):
         parent = self._nodes[-1]
         starttime = attrs["starttime"].split(" ")[1]
         default_open = "suite" in self.auto_open or parent == ""
-        node = self.tree.insert(parent, "end", text=" %s" % name, 
-                                open=default_open, image=self._image["suite"],
-                                values=(event_id, starttime))
+        node = self._insert(parent, "end", text=" %s" % name, 
+                            open=default_open, image=self._image["suite"],
+                            values=(event_id, starttime))
         self._nodes.append(node)
 
     def _end_suite(self, event_id, name, attrs):
@@ -202,9 +212,9 @@ class RobotLogTree(tk.Frame):
         parent = self._nodes[-1]
         starttime = attrs["starttime"].split(" ")[1]
         default_open = "test" in self.auto_open
-        node = self.tree.insert(parent, "end", text=" %s" % name, 
-                                open=default_open,image=self._image["test"],
-                                values=(event_id, starttime))
+        node = self._insert(parent, "end", text=" %s" % name, 
+                            open=default_open,image=self._image["test"],
+                            values=(event_id, starttime))
         self._nodes.append(node)
 
     def _end_test(self, event_id, name, attrs):
@@ -216,9 +226,9 @@ class RobotLogTree(tk.Frame):
         string = " %s" % (" | ".join([name] + attrs["args"]))
         starttime = attrs["starttime"].split(" ")[1]
         default_open = "keyword" in self.auto_open
-        node = self.tree.insert(parent, "end", text=string, 
-                                open=default_open,image=self._image["keyword"],
-                                values=(event_id, starttime))
+        node = self._insert(parent, "end", text=string, 
+                            open=default_open,image=self._image["keyword"],
+                            values=(event_id, starttime))
         self._nodes.append(node)
 
     def _end_keyword(self, event_id, name, attrs):
@@ -236,4 +246,4 @@ class RobotLogTree(tk.Frame):
         parent = self._nodes[-1]
         if attrs["level"] in ("INFO","WARN","ERROR"):
             string = "%s: %s" % (attrs["level"], attrs["message"].replace("\n", "\\n"))
-            node = self.tree.insert(parent, "end", text=string, open=False)
+            node = self._insert(parent, "end", text=string, open=False)

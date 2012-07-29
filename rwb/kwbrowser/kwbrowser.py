@@ -65,7 +65,7 @@ class KwBrowser(ttk.Frame):
             library_id = self.lib_tree.item(item, "values")[0]
             
         # UGH. This is klunky. I should refactor this.
-        pattern = "%" + string + "%"
+        pattern = self._glob_to_sql(string)
         parameters = []
         SQL = ["SELECT kw.name, kw.id, kw.doc, c.name",
                "FROM keyword_table as kw",
@@ -138,13 +138,55 @@ class KwBrowser(ttk.Frame):
         listframe.grid_columnconfigure(2, weight=1)
         return listframe
         
+
+    def _glob_to_sql(self, string):
+        '''Convert glob-like wildcards to SQL wildcards
+
+        * becomes %
+        ? becomes _
+        % becomes \% 
+        \\ remains \\
+
+        This also adds a leading and trailing %, unless the pattern begins with
+        ^ or ends with $
+        '''
+
+        # What's with the chr(1) and chr(2) nonsense? It's a trick to
+        # hide \* and \? from the * and ? substitutions. This trick
+        # depends on the substitutiones being done in order.  chr(1)
+        # and chr(2) were picked because I know those characters
+        # almost certainly won't be in the input string
+        table = (
+            (r'\\', chr(1)),
+            (r'\*', chr(2)),
+            (r'\?', chr(3)),
+            (r'%', r'\%'),
+            (r'?', '_'),
+            (r'*', '%'),
+            (chr(1), r'\\'),
+            (chr(2), r'\*'),
+            (chr(3), r'\?')
+            )
+        for (a, b) in table:
+            string = string.replace(a,b)
+
+        if string.startswith("^"):
+            string = string[1:]
+        else:
+            string = "%" + string
+        if string.endswith("$"):
+            string = string[:-1]
+        else:
+            string = string + "%"
+        return string
+
     def _update_lib_tree(self):
         children = self.lib_tree.get_children("")
         self.lib_tree.delete(*children)
         item = self.lib_tree.insert("", "end", text="All", values=[ALL_ID])
         self.lib_tree.selection_set((item,))
         maxwidth = 0
-        for (collection_name, collection_id) in self.kwdb.get_collections():
+        for (collection_name, collection_id) in sorted(self.kwdb.get_collections(), key=lambda x: x[0].lower()):
             item = self.lib_tree.insert("", "end", text=collection_name, values=[collection_id])
             maxwidth = max(maxwidth, len(collection_name))
 
@@ -256,11 +298,21 @@ class KwBrowser(ttk.Frame):
             self.text.insert("end", "| Library | %s \n\n" % collection_name)
         if len(kw_args) > 0:
             self.text.insert("end", "Arguments: %s\n\n" % kw_args, "args")
-        self.text.insert("end", kw_doc)
+        self.text.insert("end", self._cleanup_whitespace(kw_doc))
         self.text.highlight_pattern("^\|.*?$", self._on_highlight_example)
         self.text.highlight_pattern("(?iq)"+self.filter.get_string(), 
                                     self._on_highlight_search_string)
         self.text.configure(state="disabled")
+
+    def _cleanup_whitespace(self, s):
+        '''Clean up whitespace artifacts due to robot parsing
+
+        This replaces the literal string \n with a newline, and
+        removes a single space immediately after a newline
+        '''
+        s = s.replace(r'\n', "\n")
+        s = s.replace("\n ", "\n")
+        return s
 
     def _on_highlight_search_string(self):
         '''Callback to apply highlighting of the search string'''

@@ -59,6 +59,9 @@ class Statusbar(tk.Frame):
         l.pack(side="right")
         s.pack(side="right", fill="y", padx=4, pady=4)
 
+    def get(self, section_name):
+        return self.section[section_name].get()
+
     def set(self, section_name, string):
         '''Displays a string in one of the statusbar sections
 

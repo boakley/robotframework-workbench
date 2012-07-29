@@ -145,6 +145,9 @@ class AbstractRwbGui(AbstractRwbApp, tk.Tk):
         self.bindtags(self.bindtags() + ("rwbapp",))
         self.bind_class("rwbapp", "<Destroy>", self.on_exit)
 
+    def __str__(self):
+        return self._w
+
     def register(self, class_):
         '''Register a class with the application
 

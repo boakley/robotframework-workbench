@@ -18,9 +18,13 @@ import robot.errors
 import sys
 
 class CustomXMLRPCServer(SimpleXMLRPCServer):
+    def __init__(self, *args, **kwargs):
+        self._timedout=False
+        SimpleXMLRPCServer.__init__(self, *args, **kwargs)
+
     def handle_request(self):
         self._timedout=False
-        SimpleXMLRPCServer.handle_request(self)
+        return SimpleXMLRPCServer.handle_request(self)
 
     def handle_timeout(self):
         self._timedout=True
@@ -28,18 +32,18 @@ class CustomXMLRPCServer(SimpleXMLRPCServer):
     def timedout(self):
         return self._timedout
 
-class DebugLibrary(object):
+class debuglibrary(object):
     # global, so we can create a single XMLRPC server that lasts for
     # the life of the suite
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     def __init__(self, port=8911):
-        self.timeout = 5 ;# seconds
         self.server = CustomXMLRPCServer(("localhost", 0), 
                                    SimpleXMLRPCRequestHandler, 
                                    allow_none=True,
                                    logRequests=False)
         self.port = self.server.server_address[1]
         self.server.register_function(self._ping, "ping")
+        self.server.register_function(self._ready, "ready")
         self.server.register_function(self._resume, "resume")
         self.server.register_function(self._get_variables, "get_variables")
         self.server.register_function(self._stop, "stop")
@@ -55,30 +59,38 @@ class DebugLibrary(object):
         log_message = ":break:%s:" % self.port
         if message is not None:
             log_message += " " + message
-        sys.stdout.flush()
         BuiltIn().log(log_message, "DEBUG")
 
+        # wait for a ping from the debugger. If we time out, continue 
+        # without waiting for interaction
+        self.server.timeout=5  # seconds
+        self.server.handle_request()
+        if self.server.timedout():
+            BuiltIn().log("timeout waiting for debugger", "WARN")
+            return
+        
         # this enters into a mini event loop, handling requests
-        # from the remote listener. Of course, if there is no
-        # remote listener this will hang. 
+        # from the remote listener. 
         self.state = "break"
-        self.server.timeout=self.timeout
+        self.server.timeout=None
         while self.state == "break":
             try:
+                # N.B. a side effect of calling handle_request() is
+                # that self.state may change. 
                 self.server.handle_request()
-                if self.server.timedout():
-                    BuiltIn().log("timeout waiting for debugger", "WARN")
-                    return
 
-                if self.state == "continue": break
-                if self.state == "fail_test":
+                if self.state == "continue": 
+                    break
+
+                elif self.state == "fail_test":
                     raise AssertionError("debug fail")
 
-                if self.state == "fail_suite":
+                elif self.state == "fail_suite":
                     error = robot.errors.ExecutionFailed("debug quit")
                     error = AssertionError("killed by the debugger")
                     error.ROBOT_EXIT_ON_FAILURE = True
                     raise error
+
             except Exception, e:
                 BuiltIn().log("unexpected error handling request from debugger: %s" % str(e), "DEBUG")
                 raise
@@ -97,8 +109,15 @@ class DebugLibrary(object):
         return BuiltIn().run_keyword(*args)
 
     def _get_variables(self):
-        variables = BuiltIn().get_variables()
-        return dict(variables)
+        try:
+            variables = BuiltIn().get_variables()
+            return dict(variables)
+        except Exception, e:
+            BuiltIn().log("unexpected error while retrieving variables: %s"  % str(e), "DEBUG")
+        return {}
+
+    def _ready(self):
+        return "ready"
 
     def _ping(self):
         return "ping"

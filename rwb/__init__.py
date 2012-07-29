@@ -16,10 +16,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 '''
 
-__version__ = "0.4.0"
+__version__ = "0.5"
 
 from rwb.misc import socket_listener
-from rwb.misc import DebugLibrary
+from rwb.misc.debuglibrary import debuglibrary as DebugLibrary
 
 # these will be set by the app after Tkinter is initialized
 FONT_SCHEME = None

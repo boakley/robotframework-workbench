@@ -27,6 +27,8 @@ DEFAULT_SETTINGS = {
     }
 
 class DebuggerApp(AbstractRwbGui):
+    remote_host="localhost"
+    remote_port=8910
     def __init__(self):
         import sys; sys.stdout=sys.__stdout__
         AbstractRwbGui.__init__(self, NAME, DEFAULT_SETTINGS)
@@ -230,7 +232,6 @@ class DebuggerApp(AbstractRwbGui):
 
         self.input = KeywordDTE(vpw, wrap="word", height=4, highlightthickness=0)
         padx = self.input.cget("padx")
-        self.input.tag_configure("result", lmargin1=padx+20, lmargin2=padx+20)
         self.input.tag_configure("error", foreground="#b22222")
         self.log_messages = RobotLogMessages(vpw)
 
@@ -250,10 +251,12 @@ class DebuggerApp(AbstractRwbGui):
         self.log_messages.reset()
         self.varlist.reset()
 
+    # the logic here is pretty crummy; I need a better way to 
+    # communicate with the running test. Maybe a bidirectional
+    # pipe? 
     def _listen(self, cmd, *args):
         self.event_id += 1
 
-        self.log.debug("in _listen: %s %s", cmd, str(args))
         for listener in self.listeners:
             listener.listen(self.event_id, cmd, args)
         
@@ -266,34 +269,32 @@ class DebuggerApp(AbstractRwbGui):
             self.set_running_state()
 
         if cmd == "log_message":
-            self.set_running_state()
             attrs = args[0]
             if attrs["level"] == "DEBUG":
                 if attrs["message"].strip().startswith(":break:"):
                     # this is a signal from the 'breakpoint' keyword
                     self.remote_port = attrs["message"].split(":")[2]
-                    self.log.debug("remote port=%s" % self.remote_port)
+                    self.log.debug("remote host=%s port=%s" % (self.remote_host, self.remote_port))
                     self.set_break_state()
                     self.proxy("ready")
                     self.refresh_vars()
+
+                elif attrs["message"].strip() == ":continue:":
+                    self.set_running_state()
 
         if cmd in ("start_test", "start_suite", "start_keyword"):
             name = args[0]
             cmd_type = cmd.split("_")[1]
             self.stack.append((cmd_type, name))
             self.update_display()
-            self.set_running_state()
 
         elif cmd in ("end_test", "end_suite", "end_keyword"):
             cmd_type = cmd.split("_")[1]
             self.stack.pop()
             self.update_display()
-            self.set_running_state()
 
         elif cmd == "close":
             self.set_idle_state()
-
-        self.log.debug("out _listen: %s %s", cmd, str(args))
 
     def update_display(self):
         '''Refresh all of the status information in the GUI'''

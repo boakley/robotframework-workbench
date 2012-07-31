@@ -408,7 +408,7 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
 
         # are we in a variable? If so, move to just outside the variable
         line = self.get("insert linestart", "insert")
-        if re.search(r'\${[^}]*$', line):
+        if re.search(r'[\$@]{[^}]*$', line):
             index = self.search("} *", "insert", regexp=True,
                                 stopindex="insert lineend", count=self.tmpvar)
             if index != "":
@@ -480,7 +480,7 @@ class DynamicTableEditor(tk.Text, HighlightMixin):
         # if the prev char is a $, automagically add a close curly
         prev = self.get("insert-1c")
         prevprev = self.get("insert-1c")
-        if (prev == "$" and prevprev != "\\"):
+        if ((prev == "$"  or prev == "@") and prevprev != "\\"):
             self.insert("insert", "{}")
             self.tag_add("variable", "insert-3c", "insert")
             self.mark_set("insert", "insert-1c")

@@ -80,20 +80,29 @@ class RobotLogMessages(ttk.Frame):
         for data in self._cache:
             self._add_tree_item(data)
 
+    def _insert(self, parent, index, *args, **kwargs):
+        try:
+            node = self.tree.insert(parent, index, *args, **kwargs)
+            return node
+        except Exception, e:
+            print "error adding item to tree:", str(e)
+            print args, kwargs
+        return None
+
     def _add_tree_item(self, data):
         level, timestamp, message, event_id = data
         tags = (level,)
         strings = message.split("\n")
         if self._show_level[level].get():
-            node = self.tree.insert("", "end", 
-                                    values=(level, timestamp, strings[0],),
+            node = self._insert("","end",
+                                values=(level, timestamp, strings[0],),
+                                open=False,
+                                tags=tags)
+            for string in strings[1:]:
+                node = self._insert("","end",
+                                    values=("", "", string),
                                     open=False,
                                     tags=tags)
-            for string in strings[1:]:
-                node = self.tree.insert("", "end", 
-                                        values=("", "", string),
-                                        open=False,
-                                        tags=tags)
             # FIXME: should only be doing this if the user
             # hasn't scrolled up...
             self.tree.see(node)

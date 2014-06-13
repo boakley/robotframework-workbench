@@ -1,3 +1,24 @@
+-----------------
+
+NOTE: This project is no longer being supported. I am migrating many 
+of the features to other projects. 
+
+If you are looking for an editor
+for robot framework text files I recommend brackets [1] with the
+robot framework plugin [2]
+
+[1] http://www.brackets.io/
+[2] https://github.com/boakley/brackets-robotframework
+
+If you are looking for a keyword browser, I recommend the project
+robotframework-hub [3]
+
+[3] https://github.com/boakley/robotframework-hub
+
+Other features frome this project will eventually be implemented as
+features in one of the above mentioned projects
+
+-----------------
 ===============================
 Robot Framework Workbench (rwb)
 ===============================
